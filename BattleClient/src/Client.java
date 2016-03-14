@@ -8,8 +8,6 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Random;
 
-import PackTest.Logos;
-
 
 public class Client implements Runnable {
 
@@ -33,6 +31,7 @@ public class Client implements Runnable {
 	public static Player monPlayer;
 	public static ArrayList<Player> ListePlayers=new ArrayList<Player>();
 	public static ArrayList<Logos> ListeLogos=new ArrayList<Logos>();
+	public static int nbJump=0;
 
 	public Client(String ipServer, long teamId, String secret, int socketNumber, long gameId) {
 		this.ipServer = ipServer;
@@ -66,15 +65,36 @@ public class Client implements Runnable {
 						String[] components = message.substring("worldstate::".length()).split(";", -1);
 						int round = Integer.parseInt(components[0]);
 						// On joue
-//							initWorld(components);   
-//							updateWorld(components);
+						int compteur=0;
+						if ((compteur%6)+1 ==1){
+							if(round==1){ // le round commence a 1...
+								initWorld(components); //construction du monde
+								String action = secret + "%%action::" + teamId + ";" + gameId + ";" + round + ";"
+										+ trouverLogoProche().code;
+								System.out.println(action);
+								out.println(action);
+							}else{
+								updateWorld(components); //mise a jour du monde
+								String action = secret + "%%action::" + teamId + ";" + gameId + ";" + round + ";"
+										+ trouverLogoProche().code;
+								System.out.println(action);
+								out.println(action);
+							}
+							
+							}else{
+								String action = secret + "%%action::" + teamId + ";" + gameId + ";" + round + ";"
+										+ computeDirection().code;
+								System.out.println(action);
+								out.println(action);
+						}
 						
-						String action = secret + "%%action::" + teamId + ";" + gameId + ";" + round + ";"
-								+ computeDirection().code;
+						compteur++;
+//						String action = secret + "%%action::" + teamId + ";" + gameId + ";" + round + ";"
+//								+ computeDirection().code;
 //						String action = secret + "%%action::" + teamId + ";" + gameId + ";" + round + ";"
 //						+ trouverLogoProche().code;
-						System.out.println(action);
-						out.println(action);
+//						System.out.println(action);
+//						out.println(action);
 						out.flush();
 					} else if (message.equalsIgnoreCase("Inscription KO")) {
 						System.out.println("inscription KO");
@@ -102,12 +122,21 @@ public class Client implements Runnable {
 	}
 //Fonction de construction du monde
 	public void initWorld(String[] tab){
+				
+		//Cr�ation des logos
+		String listeLogos=tab[2];
+		String[] logos=listeLogos.split(":");
+		for(int j=0;j<logos.length;j++){
+			String[] attributs=logos[j].split(",");
+			ListeLogos.add(new Logos("Logo_"+j,Integer.parseInt(attributs[0]),Integer.parseInt(attributs[1])));
+		}
 		
 		//Cr�ation des joueurs
 		String listePlayer=tab[1];
 		String[] player=listePlayer.split(":");
 		String listeCaddies=tab[3];
 		String[] caddies=listeCaddies.split(":");
+		
 		for(int i=0;i<player.length;i++){
 			String[] attributsP=player[i].split(",");
 			String[] attributsC=caddies[i].split(",");
@@ -119,7 +148,8 @@ public class Client implements Runnable {
 						attributsP[4], //etat
 						Integer.parseInt(attributsC[1]), //caddiePosX
 						Integer.parseInt(attributsC[2]),//caddiesPosY
-						false,null); //a un logo
+						false,//a un logo
+						null); //dernier tapé
 				}else{ 
 					ListePlayers.add(new Player(attributsP[0], //nom
 							Integer.parseInt(attributsP[1]), //posX
@@ -128,51 +158,49 @@ public class Client implements Runnable {
 							attributsP[4], //etat
 							Integer.parseInt(attributsC[1]), //caddiePosX
 							Integer.parseInt(attributsC[2]), //caddiesPosY
-							false,null) //a un logo
+							false, //a un logo
+							null) //dernier tapé
 						); 
 				}
 		}
-		//Cr�ation des logos
-		String listeLogos=tab[2];
-		String[] logos=listeLogos.split(":");
-		for(int j=0;j<logos.length;j++){
-			String[] attributs=logos[j].split(",");
-			ListeLogos.add(new Logos("Logo_"+j,Integer.parseInt(attributs[0]),Integer.parseInt(attributs[1])));
-		}
-		
+				
 	}
+	
+	
 	//Fonction de mise a jour du monde
 	public static void updateWorld(String[] tab){
 		double startTime = (double) System.currentTimeMillis();  //start temps d'execution
-		System.out.println("------------------------");
-		//r�partition des listes		
+//		System.out.println("------------------------");
+		//Répartition des différentes listes		
 		String listePlayer=tab[1];
 		String[] player=listePlayer.split(":");
 		String listeCaddies=tab[3];
 		String[] caddies=listeCaddies.split(":");
 		//v�rification des donn�es
-		for(int k=0;k<4;k++){
-			System.out.println("tab="+tab[k]);
-		}
-		System.out.println("listeplayer="+listePlayer);
-		for(int k=0;k<3;k++){
-			System.out.println("player="+player[k]);
-		}
-		System.out.println("length="+player.length);
-		System.out.println("listecaddies="+listeCaddies);
-		for(int k=0;k<3;k++){
-			System.out.println("caddies="+caddies[k]);
-		}
+//		for(int k=0;k<4;k++){
+//			System.out.println("tab="+tab[k]);
+//		}
+//		System.out.println("listeplayer="+listePlayer);
+//		for(int k=0;k<3;k++){
+//			System.out.println("player="+player[k]);
+//		}
+//		System.out.println("length="+player.length);
+//		System.out.println("listecaddies="+listeCaddies);
+//		for(int k=0;k<3;k++){
+//			System.out.println("caddies="+caddies[k]);
+//		}
 		//Mise a jour des logos
 		String listeLogos=tab[2];
 		String[] logos=listeLogos.split(":");
-		System.out.println("listeLogos="+listeLogos);
+//		System.out.println("listeLogos="+listeLogos);
 		
+		//on vide la liste
+		ListeLogos.clear();
 		
 		for(int j=0;j<logos.length;j++){
 			String[] attributs=logos[j].split(",");
 			Logos logo=new Logos("Logo_"+j,Integer.parseInt(attributs[0]),Integer.parseInt(attributs[1]));
-			System.out.println("logo:"+logo.toString());
+//			System.out.println("logo:"+logo.toString());
 		}
 		
 		int count=0;
@@ -181,15 +209,22 @@ public class Client implements Runnable {
 			String[] attributsP=player[i].split(",");
 			String[] attributsC=caddies[i].split(",");
 			if(attributsP[0].equals("80")){
+				
 				monPlayer.setPositionX(Integer.parseInt(attributsP[1])); //posX
 				monPlayer.setPositionY(Integer.parseInt(attributsP[2])); //posY
 				monPlayer.setScrore(Integer.parseInt(attributsP[3])); //score
 				monPlayer.setEtat(attributsP[4]); //etat
 				monPlayer.setCaddiePosX(Integer.parseInt(attributsC[1])); //caddiePosX
 				monPlayer.setCaddiePosY(Integer.parseInt(attributsC[2])); //caddiesPosY
-				System.out.println("playerInfo=");
-				System.out.println("nom: "+monPlayer.getNomPlayer()+"\tposX: "+monPlayer.getPositionX()+"\tposY: "+monPlayer.getPositionY()+"\tscore: "+monPlayer.getScrore()+"\tetat: "+monPlayer.getEtat());
-				}else{ 
+//				System.out.println("playerInfo=");
+//				System.out.println("nom: "+monPlayer.getNomPlayer()+"\tposX: "+monPlayer.getPositionX()+"\tposY: "+monPlayer.getPositionY()+"\tscore: "+monPlayer.getScrore()+"\tetat: "+monPlayer.getEtat());
+				for(Logos logo:ListeLogos){
+					if(logo.getLogPositionX()==monPlayer.getPositionX() && logo.getLogPositionY()==monPlayer.getPositionY()){
+						monPlayer.setHasLogo(true);
+					}
+				}
+			
+			}else{ 
 					ListePlayers.get(count).setPositionX(Integer.parseInt(attributsP[1])); //posX
 					ListePlayers.get(count).setPositionY(Integer.parseInt(attributsP[2])); //posY
 					ListePlayers.get(count).setScrore(Integer.parseInt(attributsP[3])); //score
@@ -197,12 +232,12 @@ public class Client implements Runnable {
 					ListePlayers.get(count).setCaddiePosX(Integer.parseInt(attributsC[1])); //caddiePosX
 					ListePlayers.get(count).setCaddiePosY(Integer.parseInt(attributsC[2])); //caddiesPosY
 					
-					System.out.println("ennemis"+ListePlayers.get(count).toString());
-					System.out.println("nom: "+ListePlayers.get(count).getNomPlayer()+"\tposX: "+ListePlayers.get(count).getPositionX()+"\tposY: "+ListePlayers.get(count).getPositionY()+"\tscore: "+ListePlayers.get(count).getScrore()+"\tetat: "+ListePlayers.get(count).getEtat());
+//					System.out.println("ennemis"+ListePlayers.get(count).toString());
+//					System.out.println("nom: "+ListePlayers.get(count).getNomPlayer()+"\tposX: "+ListePlayers.get(count).getPositionX()+"\tposY: "+ListePlayers.get(count).getPositionY()+"\tscore: "+ListePlayers.get(count).getScrore()+"\tetat: "+ListePlayers.get(count).getEtat());
 					count++;
 				}			
 		}
-		System.out.println("player="+monPlayer.toString());
+//		System.out.println("player="+monPlayer.toString());
 		
 		double finTime = (double) System.currentTimeMillis();
         double totalTime = (double) ((finTime - startTime) / 1000); //calcul temps d'execution
@@ -217,8 +252,11 @@ public class Client implements Runnable {
 			int monPlayerPosY=monPlayer.getPositionY();
 			int distanceLogoPlusProche=0;
 			Logos logoPlusProche=ListeLogos.get(0);
+			System.out.println(logoPlusProche);
+			System.out.println("taille"+ListeLogos.size());
 			for(Logos logo:ListeLogos){
 				int calcul=Math.abs(monPlayerPosX-logo.getLogPositionX())+Math.abs(monPlayerPosY-logo.getLogPositionY());
+				System.out.println("dist="+calcul);
 				if(calcul<distanceLogoPlusProche){
 					logoPlusProche=logo;
 					distanceLogoPlusProche=calcul;
@@ -263,5 +301,4 @@ public class Client implements Runnable {
 	public Dir computeDirection() {
 		return Dir.values()[rand.nextInt(Dir.values().length)];
 	}
-
 }
