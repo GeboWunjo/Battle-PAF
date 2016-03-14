@@ -17,9 +17,10 @@ public class Main {
 	public static ArrayList<Player> ListePlayers=new ArrayList<Player>();
 	public static ArrayList<Logos> ListeLogos=new ArrayList<Logos>();
 	public static String message="worldstate::1;80,2,4,0,playing:15,5,10,0,stunned:18,10,5,4,playing;10,10:13,13:5,8;80,2,2:15,2,8:18,2,6;";  //message envoy� par le serveur 
+	public static int nbJump=0;
 	
 	public static void main(String[] args) {
-		String message="worldstate::0;80,2,4,0,playing:15,5,10,0,stunned:18,10,5,4,playing;10,10:13,13:5,8;80,2,2:15,2,8:18,2,6;";
+		String message="worldstate::1;80,2,4,0,playing:15,5,10,0,stunned:18,10,5,4,playing;10,10:13,13:5,8;80,2,2:15,2,8:18,2,6;";
 		String[] components = message.substring("worldstate::".length()).split(";", -1);
 		int round = Integer.parseInt(components[0]);
 		/*********************** zone de modif***************************/
@@ -183,7 +184,7 @@ public class Main {
 			int monPlayerPosX=monPlayer.getPositionX();
 			int monPlayerPosY=monPlayer.getPositionY();
 			int distanceLogoPlusProche=0;
-			Logos logoPlusProche=new Logos("");
+			Logos logoPlusProche=ListeLogos.get(0);
 			System.out.println(logoPlusProche);
 			System.out.println("taille"+ListeLogos.size());
 			//pour tous les logos calculer le nombre de d�placements

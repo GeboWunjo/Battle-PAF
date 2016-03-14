@@ -11,12 +11,6 @@ public class Logos {
 		this.logPositionX=logPosX;
 		this.logPositionY=logPosY;
 	}
-
-	public Logos(String idLogo){
-		this.idLogo=idLogo;
-		this.logPositionX=0;
-		this.logPositionY=0;
-	}
 	
 	public String getIdLogo() {
 		return idLogo;
