@@ -32,6 +32,7 @@ public class Client implements Runnable {
 	public static ArrayList<Player> ListePlayers=new ArrayList<Player>();
 	public static ArrayList<Logos> ListeLogos=new ArrayList<Logos>();
 	public static int nbJump=0;
+	public static int compteur=0;
 
 	public Client(String ipServer, long teamId, String secret, int socketNumber, long gameId) {
 		this.ipServer = ipServer;
@@ -68,17 +69,18 @@ public class Client implements Runnable {
 			/*********************** zone de modif***************************/
 						// On joue
 						int compteur=0;
-						if ((compteur%6)+1 ==1){
+						System.out.println("hello world "+(compteur%6));
+						if (((compteur%6)+1)==1){
 							if(round==1){ // le round commence a 1...
 								initWorld(components); //construction du monde
 								String action = secret + "%%action::" + teamId + ";" + gameId + ";" + round + ";"
-										+ trouverLogoProche().code;
+										+ moteurInference().code;
 								System.out.println(action);
 								out.println(action);
 							}else{
 								updateWorld(components); //mise a jour du monde
 								String action = secret + "%%action::" + teamId + ";" + gameId + ";" + round + ";"
-										+ trouverLogoProche().code;
+										+ moteurInference().code;
 								System.out.println(action);
 								out.println(action);
 							}
@@ -131,6 +133,7 @@ public class Client implements Runnable {
 		//Cr�ation des logos
 		String listeLogos=tab[2];
 		String[] logos=listeLogos.split(":");
+		ListeLogos.clear();
 		for(int j=0;j<logos.length;j++){
 			String[] attributs=logos[j].split(",");
 			ListeLogos.add(new Logos("Logo_"+j,Integer.parseInt(attributs[0]),Integer.parseInt(attributs[1])));
@@ -173,7 +176,7 @@ public class Client implements Runnable {
 	
 	
 	//Fonction de mise a jour du monde
-	public static void updateWorld(String[] tab){
+	public void updateWorld(String[] tab){
 		double startTime = (double) System.currentTimeMillis();  //start temps d'execution
 //		System.out.println("------------------------");
 		//Répartition des différentes listes		
@@ -204,7 +207,7 @@ public class Client implements Runnable {
 		
 		for(int j=0;j<logos.length;j++){
 			String[] attributs=logos[j].split(",");
-			Logos logo=new Logos("Logo_"+j,Integer.parseInt(attributs[0]),Integer.parseInt(attributs[1]));
+			ListeLogos.add(new Logos("Logo_"+j,Integer.parseInt(attributs[0]),Integer.parseInt(attributs[1])));
 //			System.out.println("logo:"+logo.toString());
 		}
 		
@@ -258,7 +261,6 @@ public class Client implements Runnable {
 	
 	public static Dir trouverLogoProche(){
 		Dir reponse = null;
-		if(!monPlayer.getHasLogo()){
 			int monPlayerPosX=monPlayer.getPositionX();
 			int monPlayerPosY=monPlayer.getPositionY();
 			int distanceLogoPlusProche=0;
@@ -284,12 +286,10 @@ public class Client implements Runnable {
 					reponse=Dir.NORD;
 				}
 			}
-		}else ramenerLogo();
 		return reponse;
 	}
 	public static Dir ramenerLogo(){
 		Dir reponse = null;
-		if(monPlayer.getHasLogo()){
 			int monPlayerPosX=monPlayer.getPositionX();
 			int monPlayerPosY=monPlayer.getPositionY();
 			int monCaddiePosX=monPlayer.getCaddiePosX();
@@ -305,7 +305,16 @@ public class Client implements Runnable {
 					reponse=Dir.EST;
 				}
 			}
-		}else trouverLogoProche();
+		return reponse;
+	}
+	
+	public Dir moteurInference(){
+		Dir reponse = null;
+		if(!monPlayer.getHasLogo()){
+			reponse=trouverLogoProche();
+		}else if(monPlayer.getHasLogo()){
+			reponse=ramenerLogo();
+		}
 		return reponse;
 	}
 	
