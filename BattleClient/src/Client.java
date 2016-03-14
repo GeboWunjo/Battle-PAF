@@ -64,6 +64,8 @@ public class Client implements Runnable {
 					} else if (message.startsWith("worldstate::")) {
 						String[] components = message.substring("worldstate::".length()).split(";", -1);
 						int round = Integer.parseInt(components[0]);
+						
+			/*********************** zone de modif***************************/
 						// On joue
 						int compteur=0;
 						if ((compteur%6)+1 ==1){
@@ -95,6 +97,7 @@ public class Client implements Runnable {
 //						+ trouverLogoProche().code;
 //						System.out.println(action);
 //						out.println(action);
+		/*********************** fin zone de modif***************************/			
 						out.flush();
 					} else if (message.equalsIgnoreCase("Inscription KO")) {
 						System.out.println("inscription KO");
@@ -120,6 +123,8 @@ public class Client implements Runnable {
 
 		}
 	}
+	
+/*********************** modif libre***************************/	
 //Fonction de construction du monde
 	public void initWorld(String[] tab){
 				
@@ -232,6 +237,12 @@ public class Client implements Runnable {
 					ListePlayers.get(count).setCaddiePosX(Integer.parseInt(attributsC[1])); //caddiePosX
 					ListePlayers.get(count).setCaddiePosY(Integer.parseInt(attributsC[2])); //caddiesPosY
 					
+					for(Logos logo:ListeLogos){
+						if(logo.getLogPositionX()==ListePlayers.get(count).getPositionX() && logo.getLogPositionY()==ListePlayers.get(count).getPositionY()){
+							ListePlayers.get(count).setHasLogo(true);
+						}
+					}
+					
 //					System.out.println("ennemis"+ListePlayers.get(count).toString());
 //					System.out.println("nom: "+ListePlayers.get(count).getNomPlayer()+"\tposX: "+ListePlayers.get(count).getPositionX()+"\tposY: "+ListePlayers.get(count).getPositionY()+"\tscore: "+ListePlayers.get(count).getScrore()+"\tetat: "+ListePlayers.get(count).getEtat());
 					count++;
@@ -298,6 +309,7 @@ public class Client implements Runnable {
 		return reponse;
 	}
 	
+	/******************code donné***************/
 	public Dir computeDirection() {
 		return Dir.values()[rand.nextInt(Dir.values().length)];
 	}
