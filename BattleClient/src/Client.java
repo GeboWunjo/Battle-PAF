@@ -73,8 +73,10 @@ public class Client implements Runnable {
 							System.out.println("a qui le tour: "+compteurGlobal);
 						}else{
 							compteurGlobal=0;
+							System.out.println("a qui le tour: "+compteurGlobal);
 						}
 						updateWorld(components); //mise a jour du monde
+						System.out.println("currentPlayer:"+currentPlayer.getNomPlayer());
 //						Requete d'action
 						String action = secret + "%%action::" + teamId + ";" + gameId + ";" + round + ";"
 								+ moteurInference().code;
@@ -82,8 +84,8 @@ public class Client implements Runnable {
 //								+ computeDirection().code;
 						System.out.println(action);
 						out.println(action);
-						//ajout du currentPlayer a la fin de ListePlayers
-						ListePlayers.add(currentPlayer);
+						//ajout du currentPlayer a sa place
+						ListePlayers.add(compteurGlobal,currentPlayer);
 						
 						double finTime = (double) System.currentTimeMillis(); 		//fin temps d'execution
 				        double totalTime = (double) ((finTime - startTime) / 1000); //calcul temps d'execution
@@ -186,8 +188,8 @@ public class Client implements Runnable {
 			//Repartition des differentes listes		
 			String listePlayer=tab[1];
 			String[] player=listePlayer.split(":");
-			String listeCaddies=tab[3];
-			String[] caddies=listeCaddies.split(":");
+//			String listeCaddies=tab[3];
+//			String[] caddies=listeCaddies.split(":");
 			
 			//Mise a jour des logos
 			String listeLogos=tab[2];
@@ -205,30 +207,30 @@ public class Client implements Runnable {
 			for(int i=0;i<player.length;i++){
 				
 				String[] attributsP=player[i].split(",");  //attributs des players
-				String[] attributsC=caddies[i].split(","); //attributs des players
-						ListePlayers.get(i).setPositionX(Integer.parseInt(attributsP[1])); //posX
-						ListePlayers.get(i).setPositionY(Integer.parseInt(attributsP[2])); //posY
-						ListePlayers.get(i).setScrore(Integer.parseInt(attributsP[3])); //score
-						ListePlayers.get(i).setEtat(attributsP[4]); //etat
-						ListePlayers.get(i).setCaddiePosX(Integer.parseInt(attributsC[1])); //caddiePosX
-						ListePlayers.get(i).setCaddiePosY(Integer.parseInt(attributsC[2])); //caddiesPosY
-						
-						//Les joueurs portent-ils des logos?
-						for(Logos logo:ListeLogos){
-							if(logo.getLogPositionX()==ListePlayers.get(i).getPositionX() && logo.getLogPositionY()==ListePlayers.get(i).getPositionY()){
-								ListePlayers.get(i).setHasLogo(true);
-							}
-						}
-						//les joueurs ont-ils dépose leur logo?
-						if(ListePlayers.get(i).getHasLogo()){
-							if(ListePlayers.get(i).getPositionX()==ListePlayers.get(i).getCaddiePosX() && ListePlayers.get(i).getPositionY()==ListePlayers.get(i).getCaddiePosY()){
-								ListePlayers.get(i).setHasLogo(false);
-							}
-						}
-						System.out.println("ennemis"+ListePlayers.get(i).toString());
-						System.out.println("nom: "+ListePlayers.get(i).getNomPlayer()+"\tposX: "+ListePlayers.get(i).getPositionX()+"\tposY: "+ListePlayers.get(i).getPositionY()+"\tscore: "+ListePlayers.get(i).getScrore()+"\tetat: "+ListePlayers.get(i).getEtat());
-						
-					}	
+				ListePlayers.get(i).setPositionX(Integer.parseInt(attributsP[1])); //posX
+				ListePlayers.get(i).setPositionY(Integer.parseInt(attributsP[2])); //posY
+				ListePlayers.get(i).setScrore(Integer.parseInt(attributsP[3])); //score
+				ListePlayers.get(i).setEtat(attributsP[4]); //etat
+				
+				//Les joueurs portent-ils des logos?
+				for(Logos logo:ListeLogos){
+					if(logo.getLogPositionX()==ListePlayers.get(i).getPositionX() && logo.getLogPositionY()==ListePlayers.get(i).getPositionY()){
+						ListePlayers.get(i).setHasLogo(true);
+					}
+					//Si le logo est sur un caddie alors il est pas dispo
+					if(logo.getLogPositionX()==ListePlayers.get(i).getCaddiePosX() && logo.getLogPositionY()==ListePlayers.get(i).getCaddiePosY()){
+						logo.setEstDispo(false);
+					}
+				}
+				//les joueurs ont-ils dépose leur logo?
+				if(ListePlayers.get(i).getHasLogo()){
+					if(ListePlayers.get(i).getPositionX()==ListePlayers.get(i).getCaddiePosX() && ListePlayers.get(i).getPositionY()==ListePlayers.get(i).getCaddiePosY()){
+						ListePlayers.get(i).setHasLogo(false);
+					}
+				}
+//						System.out.println("ennemis"+ListePlayers.get(i).toString());
+//						System.out.println("nom: "+ListePlayers.get(i).getNomPlayer()+"\tposX: "+ListePlayers.get(i).getPositionX()+"\tposY: "+ListePlayers.get(i).getPositionY()+"\tscore: "+ListePlayers.get(i).getScrore()+"\tetat: "+ListePlayers.get(i).getEtat());						
+			}	
 			currentPlayer=ListePlayers.get(compteurGlobal);
 			ListePlayers.remove(compteurGlobal);
 			}
@@ -243,27 +245,52 @@ public class Client implements Runnable {
 		int monPlayerPosY=currentPlayer.getPositionY();
 		int distanceLogoPlusProche=0;
 		Logos logoPlusProche=ListeLogos.get(0);
-		System.out.println(logoPlusProche);
-		System.out.println("taille"+ListeLogos.size());
+//		System.out.println(logoPlusProche);
+//		System.out.println("taille"+ListeLogos.size());
 		for(Logos logo:ListeLogos){
-			int calcul=Math.abs(monPlayerPosX-logo.getLogPositionX())+Math.abs(monPlayerPosY-logo.getLogPositionY());
-			System.out.println("dist="+calcul);
-			if(calcul<distanceLogoPlusProche){
-				logoPlusProche=logo;
-				distanceLogoPlusProche=calcul;
+			if(logo.isEstDispo()){
+				int calcul=Math.abs(monPlayerPosX-logo.getLogPositionX())+Math.abs(monPlayerPosY-logo.getLogPositionY());
+				System.out.println("dist="+calcul);
+				if(calcul<distanceLogoPlusProche){
+					logoPlusProche=logo;
+					distanceLogoPlusProche=calcul;
+				}
 			}
+			
 		}
+		System.out.println("va vers le logo"+logoPlusProche.getIdLogo()+";"+logoPlusProche.getLogPositionX()+";"+logoPlusProche.getLogPositionY());
 		if(monPlayerPosX<logoPlusProche.getLogPositionX()){
 			reponse=Dir.EST;
 		}else if(monPlayerPosX>logoPlusProche.getLogPositionX()){
 			reponse=Dir.OUEST;
-		}else{
+		}else if(monPlayerPosX==logoPlusProche.getLogPositionX()){
 			if(monPlayerPosY<logoPlusProche.getLogPositionY()){
 				reponse=Dir.SUD;
 			}else if(monPlayerPosY>logoPlusProche.getLogPositionY()){
 				reponse=Dir.NORD;
 			}
 		}
+//		boolean directionKO=true;
+//		int i=0;
+//		while(directionKO){
+//			if(monPlayerPosX<logoPlusProche.getLogPositionX() && monPlayerPosX+1!=ListePlayers.get(i).getPositionX()){
+//				reponse=Dir.EST;
+//				directionKO=false;
+//			}else if(monPlayerPosX>logoPlusProche.getLogPositionX() && monPlayerPosX-1!=ListePlayers.get(i).getPositionX()){
+//				reponse=Dir.OUEST;
+//				directionKO=false;
+//			}else{
+//				if(monPlayerPosY<logoPlusProche.getLogPositionY() && monPlayerPosY+1!=ListePlayers.get(i).getPositionY()){
+//					reponse=Dir.SUD;
+//					directionKO=false;
+//				}else if(monPlayerPosY>logoPlusProche.getLogPositionY() && monPlayerPosY-1!=ListePlayers.get(i).getPositionY()){
+//					reponse=Dir.NORD;
+//					directionKO=false;
+//				}
+//			}
+//			i++;
+//		}		
+		
 		return reponse;
 	}
 	public static Dir ramenerLogo(){
@@ -272,26 +299,48 @@ public class Client implements Runnable {
 		int monPlayerPosY=currentPlayer.getPositionY();
 		int monCaddiePosX=currentPlayer.getCaddiePosX();
 		int monCaddiePosY=currentPlayer.getCaddiePosY();
+		
 		if(monPlayerPosY<monCaddiePosY){
 			reponse=Dir.SUD;
 		}else if(monPlayerPosY>monCaddiePosY){
 			reponse=Dir.NORD;
-		}else{
+		}else if(monPlayerPosY==monCaddiePosY){
 			if(monPlayerPosX>monCaddiePosX){
 				reponse=Dir.OUEST;
 			}else if(monPlayerPosX<monCaddiePosX){
 				reponse=Dir.EST;
 			}
 		}
+		
+//		boolean directionKO=true;
+//		int i=0;
+//		while(directionKO){
+//			if(monPlayerPosY<monCaddiePosY && monPlayerPosY+1!=ListePlayers.get(i).getPositionX()){
+//				reponse=Dir.SUD;
+//				directionKO=false;
+//			}else if(monPlayerPosY>monCaddiePosY && monPlayerPosY-1!=ListePlayers.get(i).getPositionY()){
+//				reponse=Dir.NORD;
+//				directionKO=false;
+//			}else{
+//				if(monPlayerPosX>monCaddiePosX && monPlayerPosX-1!=ListePlayers.get(i).getPositionX()){
+//					reponse=Dir.OUEST;
+//					directionKO=false;
+//				}else if(monPlayerPosX<monCaddiePosX && monPlayerPosX+1!=ListePlayers.get(i).getPositionX()){
+//					reponse=Dir.EST;
+//					directionKO=false;
+//				}
+//			}
+//			i++;
+//		}
 		return reponse;
 	}
 	
 	public Dir moteurInference(){
 		Dir reponse = null;
-		if(!currentPlayer.getHasLogo()){
-			reponse=trouverLogoProche();
-		}else if(currentPlayer.getHasLogo()){
+		if(currentPlayer.getHasLogo()){
 			reponse=ramenerLogo();
+		}else if(currentPlayer.getHasLogo()==false){
+			reponse=trouverLogoProche();
 		}
 		return reponse;
 	}
