@@ -145,11 +145,10 @@ public class Client implements Runnable {
 		String listeLogos=tab[2];
 		String[] logos=listeLogos.split(":");
 		//suppression des logos
-		ListeLogos.clear();
 		//remplissage de la liste de logo
 		for(int j=0;j<logos.length;j++){
 			String[] attributs=logos[j].split(",");
-			ListeLogos.add(new Logos("Logo_"+j,Integer.parseInt(attributs[0]),Integer.parseInt(attributs[1])));
+			ListeLogos.add(new Logos("Logo_"+j,Integer.parseInt(attributs[0]),Integer.parseInt(attributs[1]),true));
 		}
 		//Decoupage de la chaine d'entree
 		String listePlayer=tab[1];
@@ -180,13 +179,13 @@ public class Client implements Runnable {
 	public void updateWorld(String[] tab){
 		//si pas initier, initialisation du monde
 		if(ListePlayers.size()==0){
+			System.out.println("Initialisation du monde");
 			initWorld(tab);
 		}else{
 			//mise a jour du monde
 			//Repartition des differentes listes		
 			String listePlayer=tab[1];
 			String[] player=listePlayer.split(":");
-			System.out.println("longeurliste="+player.length);
 			String listeCaddies=tab[3];
 			String[] caddies=listeCaddies.split(":");
 			
@@ -195,11 +194,11 @@ public class Client implements Runnable {
 			String[] logos=listeLogos.split(":");
 			
 			//on vide la liste
-			ListeLogos.clear();
 			//creation des logos
 			for(int j=0;j<logos.length;j++){
 				String[] attributs=logos[j].split(",");
-				ListeLogos.add(new Logos("Logo_"+j,Integer.parseInt(attributs[0]),Integer.parseInt(attributs[1])));
+				ListeLogos.get(j).setLogPositionX(Integer.parseInt(attributs[0]));
+				ListeLogos.get(j).setLogPositionY(Integer.parseInt(attributs[1]));
 			}
 			
 			//mise a jour des objets player
@@ -226,8 +225,8 @@ public class Client implements Runnable {
 								ListePlayers.get(i).setHasLogo(false);
 							}
 						}
-//						System.out.println("ennemis"+ListePlayers.get(count).toString());
-//						System.out.println("nom: "+ListePlayers.get(count).getNomPlayer()+"\tposX: "+ListePlayers.get(count).getPositionX()+"\tposY: "+ListePlayers.get(count).getPositionY()+"\tscore: "+ListePlayers.get(count).getScrore()+"\tetat: "+ListePlayers.get(count).getEtat());
+						System.out.println("ennemis"+ListePlayers.get(i).toString());
+						System.out.println("nom: "+ListePlayers.get(i).getNomPlayer()+"\tposX: "+ListePlayers.get(i).getPositionX()+"\tposY: "+ListePlayers.get(i).getPositionY()+"\tscore: "+ListePlayers.get(i).getScrore()+"\tetat: "+ListePlayers.get(i).getEtat());
 						
 					}	
 			currentPlayer=ListePlayers.get(compteurGlobal);
