@@ -28,11 +28,10 @@ public class Client implements Runnable {
 
 	Random rand = new Random();
 
-	public static Player monPlayer;
+	public static Player currentPlayer;
 	public static ArrayList<Player> ListePlayers=new ArrayList<Player>();
 	public static ArrayList<Logos> ListeLogos=new ArrayList<Logos>();
 	public static int nbJump=0;
-	public static int compteur=0;
 
 	public Client(String ipServer, long teamId, String secret, int socketNumber, long gameId) {
 		this.ipServer = ipServer;
@@ -67,32 +66,36 @@ public class Client implements Runnable {
 						int round = Integer.parseInt(components[0]);
 						
 			/*********************** zone de modif***************************/
+						double startTime = (double) System.currentTimeMillis();  //start temps d'execution
 						// On joue
-						int compteur=0;
-						System.out.println("hello world "+(compteur%6));
-						if (((compteur%6)+1)==1){
-							if(round==1){ // le round commence a 1...
-								initWorld(components); //construction du monde
-								String action = secret + "%%action::" + teamId + ";" + gameId + ";" + round + ";"
-										+ moteurInference().code;
-								System.out.println(action);
-								out.println(action);
-							}else{
-								updateWorld(components); //mise a jour du monde
-								String action = secret + "%%action::" + teamId + ";" + gameId + ";" + round + ";"
-										+ moteurInference().code;
-								System.out.println(action);
-								out.println(action);
-							}
-							
-							}else{
-								String action = secret + "%%action::" + teamId + ";" + gameId + ";" + round + ";"
-										+ computeDirection().code;
-								System.out.println(action);
-								out.println(action);
-						}
+						updateWorld(components); //mise a jour du monde
+						//Requete d'action
+						String action = secret + "%%action::" + teamId + ";" + gameId + ";" + round + ";"
+								+ moteurInference().code;
+						System.out.println(action);
+						out.println(action);
+						//ajout du currentPlayer a la fin de ListePlayers
+						ListePlayers.add(currentPlayer);
 						
-						compteur++;
+						double finTime = (double) System.currentTimeMillis(); 		//fin temps d'execution
+				        double totalTime = (double) ((finTime - startTime) / 1000); //calcul temps d'execution
+						
+				        System.out.println("temps d'execution: "+totalTime +"s");
+						
+//							if(round==1){ // le round commence a 1...
+//								initWorld(components); //construction du monde
+//								String action = secret + "%%action::" + teamId + ";" + gameId + ";" + round + ";"
+//										+ moteurInference().code;
+//								System.out.println(action);
+//								out.println(action);
+//							}else{
+//								updateWorld(components); //mise a jour du monde
+//								String action = secret + "%%action::" + teamId + ";" + gameId + ";" + round + ";"
+//										+ moteurInference().code;
+//								System.out.println(action);
+//								out.println(action);
+//						}
+						
 //						String action = secret + "%%action::" + teamId + ";" + gameId + ";" + round + ";"
 //								+ computeDirection().code;
 //						String action = secret + "%%action::" + teamId + ";" + gameId + ";" + round + ";"
@@ -130,195 +133,163 @@ public class Client implements Runnable {
 //Fonction de construction du monde
 	public void initWorld(String[] tab){
 				
-		//Cr�ation des logos
+		//Creation des logos
 		String listeLogos=tab[2];
 		String[] logos=listeLogos.split(":");
+		//suppression des logos
 		ListeLogos.clear();
+		//remplissage de la liste de logo
 		for(int j=0;j<logos.length;j++){
 			String[] attributs=logos[j].split(",");
 			ListeLogos.add(new Logos("Logo_"+j,Integer.parseInt(attributs[0]),Integer.parseInt(attributs[1])));
 		}
-		
-		//Cr�ation des joueurs
+		//Decoupage de la chaine d'entree
 		String listePlayer=tab[1];
 		String[] player=listePlayer.split(":");
 		String listeCaddies=tab[3];
 		String[] caddies=listeCaddies.split(":");
-		
+		//creation des players
 		for(int i=0;i<player.length;i++){
 			String[] attributsP=player[i].split(",");
 			String[] attributsC=caddies[i].split(",");
-			if(attributsP[0].equals("80")){
-				monPlayer=new Player(attributsP[0], //nom
-						Integer.parseInt(attributsP[1]), //posX
-						Integer.parseInt(attributsP[2]), //posY
-						Integer.parseInt(attributsP[3]), //score
-						attributsP[4], //etat
-						Integer.parseInt(attributsC[1]), //caddiePosX
-						Integer.parseInt(attributsC[2]),//caddiesPosY
-						false,//a un logo
-						null); //dernier tapé
-				}else{ 
-					ListePlayers.add(new Player(attributsP[0], //nom
-							Integer.parseInt(attributsP[1]), //posX
-							Integer.parseInt(attributsP[2]), //posY
-							Integer.parseInt(attributsP[3]), //score
-							attributsP[4], //etat
-							Integer.parseInt(attributsC[1]), //caddiePosX
-							Integer.parseInt(attributsC[2]), //caddiesPosY
-							false, //a un logo
-							null) //dernier tapé
-						); 
-				}
+			ListePlayers.add(new Player(attributsP[0], //nom
+					Integer.parseInt(attributsP[1]), //posX
+					Integer.parseInt(attributsP[2]), //posY
+					Integer.parseInt(attributsP[3]), //score
+					attributsP[4], //etat
+					Integer.parseInt(attributsC[1]), //caddiePosX
+					Integer.parseInt(attributsC[2]), //caddiesPosY
+					false, //a un logo
+					null) //dernier tape
+				); 
 		}
-				
+		//retirer l'element currentplayer de la listeplayer
+		currentPlayer=ListePlayers.get(0);
+		ListePlayers.remove(0);
 	}
-	
 	
 	//Fonction de mise a jour du monde
 	public void updateWorld(String[] tab){
-		double startTime = (double) System.currentTimeMillis();  //start temps d'execution
-//		System.out.println("------------------------");
-		//Répartition des différentes listes		
-		String listePlayer=tab[1];
-		String[] player=listePlayer.split(":");
-		String listeCaddies=tab[3];
-		String[] caddies=listeCaddies.split(":");
-		//v�rification des donn�es
-//		for(int k=0;k<4;k++){
-//			System.out.println("tab="+tab[k]);
-//		}
-//		System.out.println("listeplayer="+listePlayer);
-//		for(int k=0;k<3;k++){
-//			System.out.println("player="+player[k]);
-//		}
-//		System.out.println("length="+player.length);
-//		System.out.println("listecaddies="+listeCaddies);
-//		for(int k=0;k<3;k++){
-//			System.out.println("caddies="+caddies[k]);
-//		}
-		//Mise a jour des logos
-		String listeLogos=tab[2];
-		String[] logos=listeLogos.split(":");
-//		System.out.println("listeLogos="+listeLogos);
-		
-		//on vide la liste
-		ListeLogos.clear();
-		
-		for(int j=0;j<logos.length;j++){
-			String[] attributs=logos[j].split(",");
-			ListeLogos.add(new Logos("Logo_"+j,Integer.parseInt(attributs[0]),Integer.parseInt(attributs[1])));
-//			System.out.println("logo:"+logo.toString());
-		}
-		
-		int count=0;
-		//mise a jour des objets
-		for(int i=0;i<player.length;i++){
-			String[] attributsP=player[i].split(",");
-			String[] attributsC=caddies[i].split(",");
-			if(attributsP[0].equals("80")){
-				
-				monPlayer.setPositionX(Integer.parseInt(attributsP[1])); //posX
-				monPlayer.setPositionY(Integer.parseInt(attributsP[2])); //posY
-				monPlayer.setScrore(Integer.parseInt(attributsP[3])); //score
-				monPlayer.setEtat(attributsP[4]); //etat
-				monPlayer.setCaddiePosX(Integer.parseInt(attributsC[1])); //caddiePosX
-				monPlayer.setCaddiePosY(Integer.parseInt(attributsC[2])); //caddiesPosY
-//				System.out.println("playerInfo=");
-//				System.out.println("nom: "+monPlayer.getNomPlayer()+"\tposX: "+monPlayer.getPositionX()+"\tposY: "+monPlayer.getPositionY()+"\tscore: "+monPlayer.getScrore()+"\tetat: "+monPlayer.getEtat());
-				for(Logos logo:ListeLogos){
-					if(logo.getLogPositionX()==monPlayer.getPositionX() && logo.getLogPositionY()==monPlayer.getPositionY()){
-						monPlayer.setHasLogo(true);
-					}
-				}
+		//si pas initier, initialisation du monde
+		if(ListePlayers.size()<1){
+			initWorld(tab);
+		}else{
+			//mise a jour du monde
+			//Repartition des differentes listes		
+			String listePlayer=tab[1];
+			String[] player=listePlayer.split(":");
+			String listeCaddies=tab[3];
+			String[] caddies=listeCaddies.split(":");
 			
-			}else{ 
-					ListePlayers.get(count).setPositionX(Integer.parseInt(attributsP[1])); //posX
-					ListePlayers.get(count).setPositionY(Integer.parseInt(attributsP[2])); //posY
-					ListePlayers.get(count).setScrore(Integer.parseInt(attributsP[3])); //score
-					ListePlayers.get(count).setEtat(attributsP[4]); //etat
-					ListePlayers.get(count).setCaddiePosX(Integer.parseInt(attributsC[1])); //caddiePosX
-					ListePlayers.get(count).setCaddiePosY(Integer.parseInt(attributsC[2])); //caddiesPosY
-					
-					for(Logos logo:ListeLogos){
-						if(logo.getLogPositionX()==ListePlayers.get(count).getPositionX() && logo.getLogPositionY()==ListePlayers.get(count).getPositionY()){
-							ListePlayers.get(count).setHasLogo(true);
+			//Mise a jour des logos
+			String listeLogos=tab[2];
+			String[] logos=listeLogos.split(":");
+			
+			//on vide la liste
+			ListeLogos.clear();
+			//creation des logos
+			for(int j=0;j<logos.length;j++){
+				String[] attributs=logos[j].split(",");
+				ListeLogos.add(new Logos("Logo_"+j,Integer.parseInt(attributs[0]),Integer.parseInt(attributs[1])));
+			}
+			//compteur local de position des players dans la liste
+			int count=0;
+			//mise a jour des objets player
+			for(int i=0;i<player.length;i++){
+				String[] attributsP=player[i].split(",");  //attributs des players
+				String[] attributsC=caddies[i].split(","); //attributs des players
+						ListePlayers.get(count).setPositionX(Integer.parseInt(attributsP[1])); //posX
+						ListePlayers.get(count).setPositionY(Integer.parseInt(attributsP[2])); //posY
+						ListePlayers.get(count).setScrore(Integer.parseInt(attributsP[3])); //score
+						ListePlayers.get(count).setEtat(attributsP[4]); //etat
+						ListePlayers.get(count).setCaddiePosX(Integer.parseInt(attributsC[1])); //caddiePosX
+						ListePlayers.get(count).setCaddiePosY(Integer.parseInt(attributsC[2])); //caddiesPosY
+						
+						//Les joueurs portent-ils des logos?
+						for(Logos logo:ListeLogos){
+							if(logo.getLogPositionX()==ListePlayers.get(count).getPositionX() && logo.getLogPositionY()==ListePlayers.get(count).getPositionY()){
+								ListePlayers.get(count).setHasLogo(true);
+							}
 						}
-					}
-					
-//					System.out.println("ennemis"+ListePlayers.get(count).toString());
-//					System.out.println("nom: "+ListePlayers.get(count).getNomPlayer()+"\tposX: "+ListePlayers.get(count).getPositionX()+"\tposY: "+ListePlayers.get(count).getPositionY()+"\tscore: "+ListePlayers.get(count).getScrore()+"\tetat: "+ListePlayers.get(count).getEtat());
-					count++;
-				}			
-		}
-//		System.out.println("player="+monPlayer.toString());
-		
-		double finTime = (double) System.currentTimeMillis();
-        double totalTime = (double) ((finTime - startTime) / 1000); //calcul temps d'execution
-		
-        System.out.println("temps: "+totalTime +"s");
+						//les joueurs ont-ils dépose leur logo?
+						if(ListePlayers.get(count).getHasLogo()){
+							if(ListePlayers.get(count).getPositionX()==ListePlayers.get(count).getCaddiePosX() && ListePlayers.get(count).getPositionY()==ListePlayers.get(count).getCaddiePosY()){
+								ListePlayers.get(count).setHasLogo(false);
+							}
+						}
+//						System.out.println("ennemis"+ListePlayers.get(count).toString());
+//						System.out.println("nom: "+ListePlayers.get(count).getNomPlayer()+"\tposX: "+ListePlayers.get(count).getPositionX()+"\tposY: "+ListePlayers.get(count).getPositionY()+"\tscore: "+ListePlayers.get(count).getScrore()+"\tetat: "+ListePlayers.get(count).getEtat());
+						
+						//incrementation du compteur local
+						count++;
+					}			
+			}
+//			System.out.println("player="+monPlayer.toString());
+		//retirer l'element currentplayer de la listeplayer
+			currentPlayer=ListePlayers.get(0);
+			ListePlayers.remove(0);
 	}
 	
 	public static Dir trouverLogoProche(){
 		Dir reponse = null;
-			int monPlayerPosX=monPlayer.getPositionX();
-			int monPlayerPosY=monPlayer.getPositionY();
-			int distanceLogoPlusProche=0;
-			Logos logoPlusProche=ListeLogos.get(0);
-			System.out.println(logoPlusProche);
-			System.out.println("taille"+ListeLogos.size());
-			for(Logos logo:ListeLogos){
-				int calcul=Math.abs(monPlayerPosX-logo.getLogPositionX())+Math.abs(monPlayerPosY-logo.getLogPositionY());
-				System.out.println("dist="+calcul);
-				if(calcul<distanceLogoPlusProche){
-					logoPlusProche=logo;
-					distanceLogoPlusProche=calcul;
-				}
+		int monPlayerPosX=currentPlayer.getPositionX();
+		int monPlayerPosY=currentPlayer.getPositionY();
+		int distanceLogoPlusProche=0;
+		Logos logoPlusProche=ListeLogos.get(0);
+		System.out.println(logoPlusProche);
+		System.out.println("taille"+ListeLogos.size());
+		for(Logos logo:ListeLogos){
+			int calcul=Math.abs(monPlayerPosX-logo.getLogPositionX())+Math.abs(monPlayerPosY-logo.getLogPositionY());
+			System.out.println("dist="+calcul);
+			if(calcul<distanceLogoPlusProche){
+				logoPlusProche=logo;
+				distanceLogoPlusProche=calcul;
 			}
-			if(monPlayerPosX<logoPlusProche.getLogPositionX()){
-				reponse=Dir.EST;
-			}else if(monPlayerPosX>logoPlusProche.getLogPositionX()){
-				reponse=Dir.OUEST;
-			}else{
-				if(monPlayerPosY<logoPlusProche.getLogPositionY()){
-					reponse=Dir.SUD;
-				}else if(monPlayerPosY>logoPlusProche.getLogPositionY()){
-					reponse=Dir.NORD;
-				}
+		}
+		if(monPlayerPosX<logoPlusProche.getLogPositionX()){
+			reponse=Dir.EST;
+		}else if(monPlayerPosX>logoPlusProche.getLogPositionX()){
+			reponse=Dir.OUEST;
+		}else{
+			if(monPlayerPosY<logoPlusProche.getLogPositionY()){
+				reponse=Dir.SUD;
+			}else if(monPlayerPosY>logoPlusProche.getLogPositionY()){
+				reponse=Dir.NORD;
 			}
+		}
 		return reponse;
 	}
 	public static Dir ramenerLogo(){
 		Dir reponse = null;
-			int monPlayerPosX=monPlayer.getPositionX();
-			int monPlayerPosY=monPlayer.getPositionY();
-			int monCaddiePosX=monPlayer.getCaddiePosX();
-			int monCaddiePosY=monPlayer.getCaddiePosY();
-			if(monPlayerPosY<monCaddiePosY){
-				reponse=Dir.SUD;
-			}else if(monPlayerPosY>monCaddiePosY){
-				reponse=Dir.NORD;
-			}else{
-				if(monPlayerPosX>monCaddiePosX){
-					reponse=Dir.OUEST;
-				}else if(monPlayerPosX<monCaddiePosX){
-					reponse=Dir.EST;
-				}
+		int monPlayerPosX=currentPlayer.getPositionX();
+		int monPlayerPosY=currentPlayer.getPositionY();
+		int monCaddiePosX=currentPlayer.getCaddiePosX();
+		int monCaddiePosY=currentPlayer.getCaddiePosY();
+		if(monPlayerPosY<monCaddiePosY){
+			reponse=Dir.SUD;
+		}else if(monPlayerPosY>monCaddiePosY){
+			reponse=Dir.NORD;
+		}else{
+			if(monPlayerPosX>monCaddiePosX){
+				reponse=Dir.OUEST;
+			}else if(monPlayerPosX<monCaddiePosX){
+				reponse=Dir.EST;
 			}
+		}
 		return reponse;
 	}
 	
 	public Dir moteurInference(){
 		Dir reponse = null;
-		if(!monPlayer.getHasLogo()){
+		if(!currentPlayer.getHasLogo()){
 			reponse=trouverLogoProche();
-		}else if(monPlayer.getHasLogo()){
+		}else if(currentPlayer.getHasLogo()){
 			reponse=ramenerLogo();
 		}
 		return reponse;
 	}
 	
-	/******************code donné***************/
+	/******************code donne***************/
 	public Dir computeDirection() {
 		return Dir.values()[rand.nextInt(Dir.values().length)];
 	}
