@@ -10,9 +10,10 @@ public class Player {
 	private int caddiePosY;
 	private Boolean hasLogo;
 	private String lastHit;
+	private int nbJump;
 	
 
-	public  Player(String nomPlayer, int posX, int posY, int score, String etat, int cadPosX, int cadPosY, Boolean hasLogo, String lastHit){
+	public  Player(String nomPlayer, int posX, int posY, int score, String etat, int cadPosX, int cadPosY, Boolean hasLogo, String lastHit, int nbJump){
 		this.nomPlayer=nomPlayer;
 		this.positionX=posX;
 		this.positionY=posY;
@@ -22,6 +23,7 @@ public class Player {
 		this.caddiePosY=cadPosY;
 		this.hasLogo=hasLogo;
 		this.lastHit=lastHit;
+		this.nbJump=nbJump;
 	}
 	
 	public String getLastHit() {
@@ -68,8 +70,8 @@ public class Player {
 		return score;
 	}
 
-	public void setScrore(int scrore) {
-		this.score = scrore;
+	public void setScrore(int score) {
+		this.score = score;
 	}
 	
 	public int getCaddiePosX() {
@@ -94,5 +96,13 @@ public class Player {
 
 	public void setHasLogo(Boolean hasLogo) {
 		this.hasLogo = hasLogo;
+	}
+
+	public int getNbJump() {
+		return nbJump;
+	}
+
+	public void setNbJump(int nbJump) {
+		this.nbJump = nbJump;
 	}
 }

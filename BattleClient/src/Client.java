@@ -31,7 +31,6 @@ public class Client implements Runnable {
 	public static Player currentPlayer;
 	public static ArrayList<Player> ListePlayers=new ArrayList<Player>();
 	public static ArrayList<Logos> ListeLogos=new ArrayList<Logos>();
-	public static int nbJump=0;
 	public static int compteurGlobal=0;
 
 	public Client(String ipServer, long teamId, String secret, int socketNumber, long gameId) {
@@ -76,7 +75,7 @@ public class Client implements Runnable {
 							System.out.println("a qui le tour: "+compteurGlobal);
 						}
 						updateWorld(components); //mise a jour du monde
-						System.out.println("currentPlayer:"+currentPlayer.getNomPlayer());
+						System.out.println("currentPlayer:"+currentPlayer.getNomPlayer()+"nbJump: "+currentPlayer.getNbJump());
 //						Requete d'action
 						String action = secret + "%%action::" + teamId + ";" + gameId + ";" + round + ";"
 								+ moteurInference().code;
@@ -169,7 +168,8 @@ public class Client implements Runnable {
 					Integer.parseInt(attributsC[1]), //caddiePosX
 					Integer.parseInt(attributsC[2]), //caddiesPosY
 					false, //a un logo
-					null) //dernier tape
+					null, //dernier tape
+					0) //nbJump
 				); 
 		}
 		//retirer l'element currentplayer de la listeplayer
@@ -195,7 +195,6 @@ public class Client implements Runnable {
 			String listeLogos=tab[2];
 			String[] logos=listeLogos.split(":");
 			
-			//on vide la liste
 			//creation des logos
 			for(int j=0;j<logos.length;j++){
 				String[] attributs=logos[j].split(",");
@@ -215,15 +214,16 @@ public class Client implements Runnable {
 				ListePlayers.get(i).setHasLogo(false);
 				
 				//Les joueurs portent-ils des logos?
-				for(Logos logo:ListeLogos){
-					if(logo.getLogPositionX()==ListePlayers.get(i).getPositionX() && logo.getLogPositionY()==ListePlayers.get(i).getPositionY()){
+				for(int j=0;j<ListeLogos.size();j++){
+					if(ListeLogos.get(j).getLogPositionX()==ListePlayers.get(i).getPositionX() && ListeLogos.get(j).getLogPositionY()==ListePlayers.get(i).getPositionY()){
 						ListePlayers.get(i).setHasLogo(true);
-						logo.setEstDispo(false);
+						ListeLogos.get(j).setEstDispo(false);
 					}
 					
 					//Si le logo est sur un caddie alors il est pas dispo
-					if(logo.getLogPositionX()==ListePlayers.get(i).getCaddiePosX() && logo.getLogPositionY()==ListePlayers.get(i).getCaddiePosY()){
-						logo.setEstDispo(false);
+					if(ListeLogos.get(j).getLogPositionX()==ListePlayers.get(i).getCaddiePosX() && ListeLogos.get(j).getLogPositionY()==ListePlayers.get(i).getCaddiePosY()){
+						ListeLogos.get(j).setEstDispo(false);
+						ListeLogos.remove(j);
 					}
 				}
 				//les joueurs ont-ils depose leur logo?
@@ -254,19 +254,21 @@ public class Client implements Runnable {
 		for(int i=0;i<ListeLogos.size();i++){
 			int calcul=Math.abs(monPlayerPosX-ListeLogos.get(i).getLogPositionX())+Math.abs(monPlayerPosY-ListeLogos.get(i).getLogPositionY());
 			System.out.println("dist="+calcul+ " dispo=" +ListeLogos.get(i).isEstDispo());
-			if(calcul<=distanceLogoPlusProche){
-				if(ListeLogos.get(i).isEstDispo()){
+			if(calcul<=distanceLogoPlusProche && ListeLogos.get(i).isEstDispo()){
+//				if(ListeLogos.get(i).isEstDispo()){
 					logoPlusProche=ListeLogos.get(i);
 					distanceLogoPlusProche=calcul;
-				}
+//				}
 			}
 		}
 		
 		System.out.println("va vers le logo"+logoPlusProche.getIdLogo()+";"+logoPlusProche.getLogPositionX()+";"+logoPlusProche.getLogPositionY());
 		if(monPlayerPosX<logoPlusProche.getLogPositionX()){
 			reponse=Dir.EST;
+//			currentPlayer.setNbJump(currentPlayer.getNbJump()+1);
 		}else if(monPlayerPosX>logoPlusProche.getLogPositionX()){
 			reponse=Dir.OUEST;
+//			currentPlayer.setNbJump(currentPlayer.getNbJump()+1);
 		}else if(monPlayerPosX==logoPlusProche.getLogPositionX()){
 			if(monPlayerPosY<logoPlusProche.getLogPositionY()){
 				reponse=Dir.SUD;
