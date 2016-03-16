@@ -196,11 +196,13 @@ public class Client implements Runnable {
 			String[] logos=listeLogos.split(":");
 			
 			//creation des logos
+			ListeLogos.clear();
 			for(int j=0;j<logos.length;j++){
 				String[] attributs=logos[j].split(",");
-				ListeLogos.get(j).setLogPositionX(Integer.parseInt(attributs[0]));
-				ListeLogos.get(j).setLogPositionY(Integer.parseInt(attributs[1]));
-				ListeLogos.get(j).setEstDispo(true);
+				ListeLogos.add(new Logos("Logo_"+j,Integer.parseInt(attributs[0]),Integer.parseInt(attributs[1]),true));
+//				ListeLogos.get(j).setLogPositionX(Integer.parseInt(attributs[0]));
+//				ListeLogos.get(j).setLogPositionY(Integer.parseInt(attributs[1]));
+//				ListeLogos.get(j).setEstDispo(true);
 			}
 			
 			//mise a jour des objets player
@@ -223,7 +225,7 @@ public class Client implements Runnable {
 					//Si le logo est sur un caddie alors il est pas dispo
 					if(ListeLogos.get(j).getLogPositionX()==ListePlayers.get(i).getCaddiePosX() && ListeLogos.get(j).getLogPositionY()==ListePlayers.get(i).getCaddiePosY()){
 						ListeLogos.get(j).setEstDispo(false);
-						ListeLogos.remove(j);
+//						ListeLogos.remove(j);
 					}
 				}
 				//les joueurs ont-ils depose leur logo?
@@ -247,18 +249,24 @@ public class Client implements Runnable {
 		Dir reponse = null;
 		int monPlayerPosX=currentPlayer.getPositionX();
 		int monPlayerPosY=currentPlayer.getPositionY();
-		Logos logoPlusProche=ListeLogos.get(0);
-		int distanceLogoPlusProche=Math.abs(monPlayerPosX-logoPlusProche.getLogPositionX())+Math.abs(monPlayerPosY-logoPlusProche.getLogPositionY());
+		ArrayList<Logos> listeLogosLibres = new ArrayList<Logos>();
 //		System.out.println(logoPlusProche);
 //		System.out.println("taille"+ListeLogos.size());
 		for(int i=0;i<ListeLogos.size();i++){
-			int calcul=Math.abs(monPlayerPosX-ListeLogos.get(i).getLogPositionX())+Math.abs(monPlayerPosY-ListeLogos.get(i).getLogPositionY());
-			System.out.println("dist="+calcul+ " dispo=" +ListeLogos.get(i).isEstDispo());
-			if(calcul<=distanceLogoPlusProche && ListeLogos.get(i).isEstDispo()){
-//				if(ListeLogos.get(i).isEstDispo()){
-					logoPlusProche=ListeLogos.get(i);
-					distanceLogoPlusProche=calcul;
-//				}
+			if(ListeLogos.get(i).isEstDispo()) {
+				listeLogosLibres.add(ListeLogos.get(i));
+			}
+		}
+		
+		Logos logoPlusProche=listeLogosLibres.get(0);
+		int distanceLogoPlusProche=Math.abs(monPlayerPosX-logoPlusProche.getLogPositionX())+Math.abs(monPlayerPosY-logoPlusProche.getLogPositionY());
+		
+		for(int i=0;i<listeLogosLibres.size();i++){
+			int calcul=Math.abs(monPlayerPosX-listeLogosLibres.get(i).getLogPositionX())+Math.abs(monPlayerPosY-listeLogosLibres.get(i).getLogPositionY());
+			System.out.println("dist="+calcul+ " dispo=" +listeLogosLibres.get(i).isEstDispo() + " position: " +listeLogosLibres.get(i).getLogPositionX()+","+listeLogosLibres.get(i).getLogPositionY());
+			if(calcul<=distanceLogoPlusProche){
+				logoPlusProche=listeLogosLibres.get(i);
+				distanceLogoPlusProche=calcul;
 			}
 		}
 		
@@ -343,6 +351,7 @@ public class Client implements Runnable {
 	}
 	
 	public Dir attaque(){
+		System.out.println(currentPlayer.getNomPlayer() + " ATTTTAAAAQQQUUUUEEE !");
 		Dir direction=null;
 		int monPlayerPosX=currentPlayer.getPositionX();
 		int monPlayerPosY=currentPlayer.getPositionY();
@@ -350,13 +359,14 @@ public class Client implements Runnable {
 		Player playerPlusProche=ListePlayers.get(0);
 		int distanceplayerPlusProche=Math.abs(monPlayerPosX-playerPlusProche.getPositionX())+Math.abs(monPlayerPosY-playerPlusProche.getPositionY());
 		for(int i=0;i<ListePlayers.size();i++){
-			int calcul=Math.abs(monPlayerPosX-ListeLogos.get(i).getLogPositionX())+Math.abs(monPlayerPosY-ListeLogos.get(i).getLogPositionY());
-			System.out.println("dist="+calcul+ " dispo=" +ListeLogos.get(i).isEstDispo());
+			int calcul=Math.abs(monPlayerPosX-ListePlayers.get(i).getPositionX())+Math.abs(monPlayerPosY-ListePlayers.get(i).getPositionY());
 			if(calcul<=distanceplayerPlusProche){
 				playerPlusProche=ListePlayers.get(i);
 				distanceplayerPlusProche=calcul;					
 			}
 		}
+		System.out.println(playerPlusProche.getNomPlayer() + " dist="+distanceplayerPlusProche);
+		
 		if(monPlayerPosY<playerPlusProche.getPositionY()){
 			direction=Dir.SUD;
 		}else if(monPlayerPosY>playerPlusProche.getPositionY()){
@@ -375,19 +385,23 @@ public class Client implements Runnable {
 	public Dir moteurInference(){
 		Dir reponse = null;
 		int i=0;
-		int nbLogoLibre=0;
-		while(nbLogoLibre==0){
+		boolean nbLogoLibre=false;
+		while(nbLogoLibre==false && i < ListeLogos.size()){
 			if(ListeLogos.get(i).isEstDispo()){
-				nbLogoLibre++;
+				nbLogoLibre =true;
 			}else i++;
 		}
-		if(nbLogoLibre>0){
-			if(currentPlayer.getHasLogo()){
-				reponse=ramenerLogo();
-			}else if(currentPlayer.getHasLogo()==false){
-				reponse=trouverLogoProche();
-			}
-		}else attaque();
+
+		if(currentPlayer.getHasLogo()){
+			System.out.println(currentPlayer.getNomPlayer() + " ramène le logo");
+			reponse=ramenerLogo();
+		} else if(nbLogoLibre == true){
+			System.out.println(currentPlayer.getNomPlayer() + " cherche le logo");
+			reponse=trouverLogoProche();
+		} else {
+			System.out.println(currentPlayer.getNomPlayer() + " attaque");
+			reponse=attaque();
+		}
 		
 		return reponse;
 	}
