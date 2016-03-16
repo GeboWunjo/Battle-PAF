@@ -201,6 +201,7 @@ public class Client implements Runnable {
 				String[] attributs=logos[j].split(",");
 				ListeLogos.get(j).setLogPositionX(Integer.parseInt(attributs[0]));
 				ListeLogos.get(j).setLogPositionY(Integer.parseInt(attributs[1]));
+				ListeLogos.get(j).setEstDispo(true);
 			}
 			
 			//mise a jour des objets player
@@ -211,18 +212,21 @@ public class Client implements Runnable {
 				ListePlayers.get(i).setPositionY(Integer.parseInt(attributsP[2])); //posY
 				ListePlayers.get(i).setScrore(Integer.parseInt(attributsP[3])); //score
 				ListePlayers.get(i).setEtat(attributsP[4]); //etat
+				ListePlayers.get(i).setHasLogo(false);
 				
 				//Les joueurs portent-ils des logos?
 				for(Logos logo:ListeLogos){
 					if(logo.getLogPositionX()==ListePlayers.get(i).getPositionX() && logo.getLogPositionY()==ListePlayers.get(i).getPositionY()){
 						ListePlayers.get(i).setHasLogo(true);
+						logo.setEstDispo(false);
 					}
+					
 					//Si le logo est sur un caddie alors il est pas dispo
 					if(logo.getLogPositionX()==ListePlayers.get(i).getCaddiePosX() && logo.getLogPositionY()==ListePlayers.get(i).getCaddiePosY()){
 						logo.setEstDispo(false);
 					}
 				}
-				//les joueurs ont-ils dépose leur logo?
+				//les joueurs ont-ils depose leur logo?
 				if(ListePlayers.get(i).getHasLogo()){
 					if(ListePlayers.get(i).getPositionX()==ListePlayers.get(i).getCaddiePosX() && ListePlayers.get(i).getPositionY()==ListePlayers.get(i).getCaddiePosY()){
 						ListePlayers.get(i).setHasLogo(false);
@@ -243,21 +247,21 @@ public class Client implements Runnable {
 		Dir reponse = null;
 		int monPlayerPosX=currentPlayer.getPositionX();
 		int monPlayerPosY=currentPlayer.getPositionY();
-		int distanceLogoPlusProche=0;
 		Logos logoPlusProche=ListeLogos.get(0);
+		int distanceLogoPlusProche=Math.abs(monPlayerPosX-logoPlusProche.getLogPositionX())+Math.abs(monPlayerPosY-logoPlusProche.getLogPositionY());
 //		System.out.println(logoPlusProche);
 //		System.out.println("taille"+ListeLogos.size());
-		for(Logos logo:ListeLogos){
-			if(logo.isEstDispo()){
-				int calcul=Math.abs(monPlayerPosX-logo.getLogPositionX())+Math.abs(monPlayerPosY-logo.getLogPositionY());
-				System.out.println("dist="+calcul);
-				if(calcul<distanceLogoPlusProche){
-					logoPlusProche=logo;
+		for(int i=0;i<ListeLogos.size();i++){
+			int calcul=Math.abs(monPlayerPosX-ListeLogos.get(i).getLogPositionX())+Math.abs(monPlayerPosY-ListeLogos.get(i).getLogPositionY());
+			System.out.println("dist="+calcul+ " dispo=" +ListeLogos.get(i).isEstDispo());
+			if(calcul<=distanceLogoPlusProche){
+				if(ListeLogos.get(i).isEstDispo()){
+					logoPlusProche=ListeLogos.get(i);
 					distanceLogoPlusProche=calcul;
 				}
 			}
-			
 		}
+		
 		System.out.println("va vers le logo"+logoPlusProche.getIdLogo()+";"+logoPlusProche.getLogPositionX()+";"+logoPlusProche.getLogPositionY());
 		if(monPlayerPosX<logoPlusProche.getLogPositionX()){
 			reponse=Dir.EST;
