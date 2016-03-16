@@ -299,6 +299,7 @@ public class Client implements Runnable {
 		
 		return reponse;
 	}
+	
 	public static Dir ramenerLogo(){
 		Dir reponse = null;
 		int monPlayerPosX=currentPlayer.getPositionX();
@@ -341,13 +342,53 @@ public class Client implements Runnable {
 		return reponse;
 	}
 	
+	public Dir attaque(){
+		Dir direction=null;
+		int monPlayerPosX=currentPlayer.getPositionX();
+		int monPlayerPosY=currentPlayer.getPositionY();
+		
+		Player playerPlusProche=ListePlayers.get(0);
+		int distanceplayerPlusProche=Math.abs(monPlayerPosX-playerPlusProche.getPositionX())+Math.abs(monPlayerPosY-playerPlusProche.getPositionY());
+		for(int i=0;i<ListePlayers.size();i++){
+			int calcul=Math.abs(monPlayerPosX-ListeLogos.get(i).getLogPositionX())+Math.abs(monPlayerPosY-ListeLogos.get(i).getLogPositionY());
+			System.out.println("dist="+calcul+ " dispo=" +ListeLogos.get(i).isEstDispo());
+			if(calcul<=distanceplayerPlusProche){
+				playerPlusProche=ListePlayers.get(i);
+				distanceplayerPlusProche=calcul;					
+			}
+		}
+		if(monPlayerPosY<playerPlusProche.getPositionY()){
+			direction=Dir.SUD;
+		}else if(monPlayerPosY>playerPlusProche.getPositionY()){
+			direction=Dir.NORD;
+		}else if(monPlayerPosX<playerPlusProche.getPositionX()){
+			direction=Dir.EST;
+//			currentPlayer.setNbJump(currentPlayer.getNbJump()+1);
+		}else if(monPlayerPosX>playerPlusProche.getPositionX()){
+			direction=Dir.OUEST;
+//			currentPlayer.setNbJump(currentPlayer.getNbJump()+1);
+		}
+				
+		return direction;
+	}
+	
 	public Dir moteurInference(){
 		Dir reponse = null;
-		if(currentPlayer.getHasLogo()){
-			reponse=ramenerLogo();
-		}else if(currentPlayer.getHasLogo()==false){
-			reponse=trouverLogoProche();
+		int i=0;
+		int nbLogoLibre=0;
+		while(nbLogoLibre==0){
+			if(ListeLogos.get(i).isEstDispo()){
+				nbLogoLibre++;
+			}else i++;
 		}
+		if(nbLogoLibre>0){
+			if(currentPlayer.getHasLogo()){
+				reponse=ramenerLogo();
+			}else if(currentPlayer.getHasLogo()==false){
+				reponse=trouverLogoProche();
+			}
+		}else attaque();
+		
 		return reponse;
 	}
 	
