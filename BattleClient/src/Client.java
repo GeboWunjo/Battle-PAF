@@ -355,13 +355,28 @@ public class Client implements Runnable {
 		Dir direction=null;
 		int monPlayerPosX=currentPlayer.getPositionX();
 		int monPlayerPosY=currentPlayer.getPositionY();
+		ArrayList<Player> ListePlayerLogos = new ArrayList<Player>();
+		ArrayList<Player> ListePlayerATaper = new ArrayList<Player>();
 		
 		Player playerPlusProche=ListePlayers.get(0);
 		int distanceplayerPlusProche=Math.abs(monPlayerPosX-playerPlusProche.getPositionX())+Math.abs(monPlayerPosY-playerPlusProche.getPositionY());
+		
 		for(int i=0;i<ListePlayers.size();i++){
-			int calcul=Math.abs(monPlayerPosX-ListePlayers.get(i).getPositionX())+Math.abs(monPlayerPosY-ListePlayers.get(i).getPositionY());
+			if(ListePlayers.get(i).getHasLogo()) {
+				ListePlayerLogos.add(ListePlayers.get(i));
+			}
+		}
+		
+		if(ListePlayerLogos.size() > 0) {
+			ListePlayerATaper = ListePlayerLogos;
+		} else {
+			ListePlayerATaper = ListePlayers;
+		}
+		
+		for(int i=0;i<ListePlayerATaper.size();i++){
+			int calcul=Math.abs(monPlayerPosX-ListePlayerATaper.get(i).getPositionX())+Math.abs(monPlayerPosY-ListePlayerATaper.get(i).getPositionY());
 			if(calcul<=distanceplayerPlusProche){
-				playerPlusProche=ListePlayers.get(i);
+				playerPlusProche=ListePlayerATaper.get(i);
 				distanceplayerPlusProche=calcul;					
 			}
 		}
