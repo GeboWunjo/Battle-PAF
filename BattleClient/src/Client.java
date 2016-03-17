@@ -1,5 +1,7 @@
+
+
 import java.io.BufferedReader;
-import java.io.IOException;
+import java.io.IOException; 
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -29,7 +31,6 @@ public class Client implements Runnable {
 	public static Player currentPlayer;
 	public static ArrayList<Player> ListePlayers=new ArrayList<Player>();
 	public static ArrayList<Logos> ListeLogos=new ArrayList<Logos>();
-	public static int nbJump=0;
 	public static int compteurGlobal=0;
 
 	public Client(String ipServer, long teamId, String secret, int socketNumber, long gameId) {
@@ -74,7 +75,7 @@ public class Client implements Runnable {
 							System.out.println("a qui le tour: "+compteurGlobal);
 						}
 						updateWorld(components); //mise a jour du monde
-						System.out.println("currentPlayer:"+currentPlayer.getNomPlayer());
+						System.out.println("currentPlayer:"+currentPlayer.getNomPlayer()+"nbJump: "+currentPlayer.getNbJump());
 //						Requete d'action
 						String action = secret + "%%action::" + teamId + ";" + gameId + ";" + round + ";"
 								+ moteurInference().code;
@@ -137,6 +138,29 @@ public class Client implements Runnable {
 		}
 	}
 	
+	public static void setHit() {
+		int posX = currentPlayer.getPositionX();
+		int posY = currentPlayer.getPositionY();
+		String hitID = null; 
+		int nbHit = 0;
+		
+		for(int i=0;i<ListePlayers.size();i++){
+			Player hit = ListePlayers.get(i);
+			for(int j = posX-1; j < posX+1; posX++) {
+				for(int k = posY-1; k < posY+1; posY++) {
+					if(hit.getPositionX() == j && hit.getPositionY() == k) {
+						hitID = hit.getNomPlayer();
+						nbHit++;
+					}
+				}
+			}
+		}
+		
+		if(nbHit == 1) {
+			currentPlayer.setLastHit(hitID);
+		}
+	}
+
 /*********************** modif libre***************************/	
 //Fonction de construction du monde
 	public void initWorld(String[] tab){
@@ -167,7 +191,8 @@ public class Client implements Runnable {
 					Integer.parseInt(attributsC[1]), //caddiePosX
 					Integer.parseInt(attributsC[2]), //caddiesPosY
 					false, //a un logo
-					null) //dernier tape
+					null, //dernier tape
+					0) //nbJump
 				); 
 		}
 		//retirer l'element currentplayer de la listeplayer
@@ -193,12 +218,14 @@ public class Client implements Runnable {
 			String listeLogos=tab[2];
 			String[] logos=listeLogos.split(":");
 			
-			//on vide la liste
 			//creation des logos
+			ListeLogos.clear();
 			for(int j=0;j<logos.length;j++){
 				String[] attributs=logos[j].split(",");
-				ListeLogos.get(j).setLogPositionX(Integer.parseInt(attributs[0]));
-				ListeLogos.get(j).setLogPositionY(Integer.parseInt(attributs[1]));
+				ListeLogos.add(new Logos("Logo_"+j,Integer.parseInt(attributs[0]),Integer.parseInt(attributs[1]),true));
+//				ListeLogos.get(j).setLogPositionX(Integer.parseInt(attributs[0]));
+//				ListeLogos.get(j).setLogPositionY(Integer.parseInt(attributs[1]));
+//				ListeLogos.get(j).setEstDispo(true);
 			}
 			
 			//mise a jour des objets player
@@ -209,18 +236,22 @@ public class Client implements Runnable {
 				ListePlayers.get(i).setPositionY(Integer.parseInt(attributsP[2])); //posY
 				ListePlayers.get(i).setScrore(Integer.parseInt(attributsP[3])); //score
 				ListePlayers.get(i).setEtat(attributsP[4]); //etat
+				ListePlayers.get(i).setHasLogo(false);
 				
 				//Les joueurs portent-ils des logos?
-				for(Logos logo:ListeLogos){
-					if(logo.getLogPositionX()==ListePlayers.get(i).getPositionX() && logo.getLogPositionY()==ListePlayers.get(i).getPositionY()){
+				for(int j=0;j<ListeLogos.size();j++){
+					if(ListeLogos.get(j).getLogPositionX()==ListePlayers.get(i).getPositionX() && ListeLogos.get(j).getLogPositionY()==ListePlayers.get(i).getPositionY()){
 						ListePlayers.get(i).setHasLogo(true);
+						ListeLogos.get(j).setEstDispo(false);
 					}
+					
 					//Si le logo est sur un caddie alors il est pas dispo
-					if(logo.getLogPositionX()==ListePlayers.get(i).getCaddiePosX() && logo.getLogPositionY()==ListePlayers.get(i).getCaddiePosY()){
-						logo.setEstDispo(false);
+					if(ListeLogos.get(j).getLogPositionX()==ListePlayers.get(i).getCaddiePosX() && ListeLogos.get(j).getLogPositionY()==ListePlayers.get(i).getCaddiePosY()){
+						ListeLogos.get(j).setEstDispo(false);
+//						ListeLogos.remove(j);
 					}
 				}
-				//les joueurs ont-ils dÃ©pose leur logo?
+				//les joueurs ont-ils depose leur logo?
 				if(ListePlayers.get(i).getHasLogo()){
 					if(ListePlayers.get(i).getPositionX()==ListePlayers.get(i).getCaddiePosX() && ListePlayers.get(i).getPositionY()==ListePlayers.get(i).getCaddiePosY()){
 						ListePlayers.get(i).setHasLogo(false);
@@ -241,31 +272,43 @@ public class Client implements Runnable {
 		Dir reponse = null;
 		int monPlayerPosX=currentPlayer.getPositionX();
 		int monPlayerPosY=currentPlayer.getPositionY();
-		int distanceLogoPlusProche=0;
-		Logos logoPlusProche=ListeLogos.get(0);
+		ArrayList<Logos> listeLogosLibres = new ArrayList<Logos>();
 //		System.out.println(logoPlusProche);
 //		System.out.println("taille"+ListeLogos.size());
-		for(Logos logo:ListeLogos){
-			if(logo.isEstDispo()){
-				int calcul=Math.abs(monPlayerPosX-logo.getLogPositionX())+Math.abs(monPlayerPosY-logo.getLogPositionY());
-				System.out.println("dist="+calcul);
-				if(calcul<distanceLogoPlusProche){
-					logoPlusProche=logo;
-					distanceLogoPlusProche=calcul;
-				}
+		for(int i=0;i<ListeLogos.size();i++){
+			if(ListeLogos.get(i).isEstDispo()) {
+				listeLogosLibres.add(ListeLogos.get(i));
 			}
-			
 		}
+		
+		Logos logoPlusProche=listeLogosLibres.get(0);
+		int distanceLogoPlusProche=Math.abs(monPlayerPosX-logoPlusProche.getLogPositionX())+Math.abs(monPlayerPosY-logoPlusProche.getLogPositionY());
+		
+		for(int i=0;i<listeLogosLibres.size();i++){
+			int calcul=Math.abs(monPlayerPosX-listeLogosLibres.get(i).getLogPositionX())+Math.abs(monPlayerPosY-listeLogosLibres.get(i).getLogPositionY());
+			System.out.println("dist="+calcul+ " dispo=" +listeLogosLibres.get(i).isEstDispo() + " position: " +listeLogosLibres.get(i).getLogPositionX()+","+listeLogosLibres.get(i).getLogPositionY());
+			if(calcul<=distanceLogoPlusProche){
+				logoPlusProche=ListeLogos.get(i);
+				distanceLogoPlusProche=calcul;
+			}
+		}
+		
 		System.out.println("va vers le logo"+logoPlusProche.getIdLogo()+";"+logoPlusProche.getLogPositionX()+";"+logoPlusProche.getLogPositionY());
 		if(monPlayerPosX<logoPlusProche.getLogPositionX()){
-			reponse=Dir.EST;
+//			reponse=Dir.EST;
+//			currentPlayer.setNbJump(currentPlayer.getNbJump()+1);
+			reponse = checkFuturePosition(monPlayerPosX+1,monPlayerPosY, Dir.EST, 0);
 		}else if(monPlayerPosX>logoPlusProche.getLogPositionX()){
-			reponse=Dir.OUEST;
+//			reponse=Dir.OUEST;
+//			currentPlayer.setNbJump(currentPlayer.getNbJump()+1);
+			reponse = checkFuturePosition(monPlayerPosX-1,monPlayerPosY, Dir.OUEST, 0);
 		}else if(monPlayerPosX==logoPlusProche.getLogPositionX()){
 			if(monPlayerPosY<logoPlusProche.getLogPositionY()){
-				reponse=Dir.SUD;
+//				reponse=Dir.SUD;
+				reponse = checkFuturePosition(monPlayerPosX,monPlayerPosY+1, Dir.SUD, 0);
 			}else if(monPlayerPosY>logoPlusProche.getLogPositionY()){
-				reponse=Dir.NORD;
+//				reponse=Dir.NORD;
+				reponse = checkFuturePosition(monPlayerPosX,monPlayerPosY-1, Dir.NORD, 0);
 			}
 		}
 //		boolean directionKO=true;
@@ -291,6 +334,105 @@ public class Client implements Runnable {
 		
 		return reponse;
 	}
+	
+	private static Dir checkFuturePosition(int x, int y, Dir dir, int tour) {
+		Dir dirDefinitif = null;
+		Dir jumpDir = null;
+		Dir inverseDir = null;
+		Dir inverseDir2 = null;
+		ArrayList<Dir> ListeJump = new ArrayList<Dir>();
+		boolean ennemiFound = false;
+		int i = 0;
+
+		ListeJump.add(Dir.JUMP_EST);
+		ListeJump.add(Dir.JUMP_OUEST);
+		ListeJump.add(Dir.JUMP_NORD);
+		ListeJump.add(Dir.JUMP_SUD);
+		
+		System.out.println("joueur "+currentPlayer.getNomPlayer()+ " checkFuturePosition tour " +tour+ " dir de base " +dir.code);
+		if(dir == Dir.EST || dir == Dir.JUMP_EST) {
+			jumpDir = Dir.JUMP_EST;
+			inverseDir = Dir.NORD;
+			inverseDir2 = Dir.SUD;
+		}
+		if(dir == Dir.OUEST || dir == Dir.JUMP_OUEST) {
+			jumpDir = Dir.JUMP_OUEST;
+			inverseDir = Dir.SUD;
+			inverseDir2 = Dir.NORD;
+		}
+		if(dir == Dir.NORD || dir == Dir.JUMP_NORD) {
+			jumpDir = Dir.JUMP_NORD;
+			inverseDir = (currentPlayer.getHasLogo() ? Dir.OUEST : Dir.EST);
+			inverseDir2 = (!currentPlayer.getHasLogo() ? Dir.EST : Dir.OUEST);
+		}
+		if(dir == Dir.SUD || dir == Dir.JUMP_SUD) {
+			jumpDir = Dir.JUMP_SUD;
+			inverseDir = (currentPlayer.getHasLogo() ? Dir.OUEST : Dir.EST);
+			inverseDir2 = (!currentPlayer.getHasLogo() ? Dir.EST : Dir.OUEST);
+		}
+		
+		while(ennemiFound == false && i < ListePlayers.size()) {
+			int posX = ListePlayers.get(i).getPositionX();
+			int posY = ListePlayers.get(i).getPositionY();
+			if(posX == x && posY == y) {
+				System.out.println("joueur "+currentPlayer.getNomPlayer()+ " checkFuturePosition LÀ ! UN ENNEMI !! ");
+				System.out.println("joueur "+currentPlayer.getNomPlayer()+ " checkFuturePosition objectif : " +x+","+y+" ennemi " +ListePlayers.get(i).getPositionX() + "," +ListePlayers.get(i).getPositionY());
+				
+				
+				//On est dans le cas simple : on tente le jumpdir
+				if(jumpDir != null && currentPlayer.getNbJump() < 3) {
+					System.out.println("joueur "+currentPlayer.getNomPlayer()+ " checkFuturePosition JUMPPPP !! ");
+					switch(dir) {
+						case EST:
+							dirDefinitif = checkFuturePosition(x+1,y,jumpDir,0);
+							break;
+						case OUEST:
+							dirDefinitif = checkFuturePosition(x-1,y,jumpDir,0);
+							break;
+						case SUD:
+							dirDefinitif = checkFuturePosition(x,y+1,jumpDir,0);
+							break;
+						case NORD:
+							dirDefinitif = checkFuturePosition(x,y-1,jumpDir,0);
+							break;
+						default:
+							dirDefinitif = null;
+					}
+				}
+				
+				if(dirDefinitif == null) {
+					System.out.println("joueur "+currentPlayer.getNomPlayer()+ " checkFuturePosition NO JUMP => ALTERNATIF tour " +tour+ " / dir " +dir.code);
+					switch(tour) {
+						case 0:
+							dirDefinitif = checkFuturePosition(x+1,y,inverseDir,1);
+							break;
+							
+						case 1:
+							dirDefinitif = checkFuturePosition(x,y+1,inverseDir2,2);
+							break;
+						
+						default:
+							dirDefinitif = dir;
+					}
+				}
+			} else {
+				System.out.println("joueur "+currentPlayer.getNomPlayer()+ " checkFuturePosition GO GO GO!! tour " +tour+ " / dir " +dir.code);
+				dirDefinitif = dir;
+			}
+			
+			i++;
+		}
+		if(ListeJump.contains(dirDefinitif)) {
+			currentPlayer.setNbJump(currentPlayer.getNbJump()+1);
+		}
+
+		System.out.println("joueur "+currentPlayer.getNomPlayer()+ " checkFuturePosition dir " +dirDefinitif.code);
+
+		//setHit();
+		
+		return dirDefinitif;
+	}
+
 	public static Dir ramenerLogo(){
 		Dir reponse = null;
 		int monPlayerPosX=currentPlayer.getPositionX();
@@ -299,14 +441,18 @@ public class Client implements Runnable {
 		int monCaddiePosY=currentPlayer.getCaddiePosY();
 		
 		if(monPlayerPosY<monCaddiePosY){
-			reponse=Dir.SUD;
+//			reponse=Dir.SUD;
+			reponse = checkFuturePosition(monPlayerPosX+1,monPlayerPosY, Dir.SUD, 0);
 		}else if(monPlayerPosY>monCaddiePosY){
-			reponse=Dir.NORD;
+//			reponse=Dir.NORD;
+			reponse = checkFuturePosition(monPlayerPosX+1,monPlayerPosY, Dir.NORD, 0);
 		}else if(monPlayerPosY==monCaddiePosY){
 			if(monPlayerPosX>monCaddiePosX){
-				reponse=Dir.OUEST;
+//				reponse=Dir.OUEST;
+				reponse = checkFuturePosition(monPlayerPosX+1,monPlayerPosY, Dir.OUEST, 0);
 			}else if(monPlayerPosX<monCaddiePosX){
-				reponse=Dir.EST;
+//				reponse=Dir.EST;
+				reponse = checkFuturePosition(monPlayerPosX+1,monPlayerPosY, Dir.EST, 0);
 			}
 		}
 		
@@ -333,13 +479,76 @@ public class Client implements Runnable {
 		return reponse;
 	}
 	
+	public Dir attaque(){
+		System.out.println(currentPlayer.getNomPlayer() + " ATTTTAAAAQQQUUUUEEE !");
+		Dir direction=null;
+		int monPlayerPosX=currentPlayer.getPositionX();
+		int monPlayerPosY=currentPlayer.getPositionY();
+		ArrayList<Player> ListePlayerLogos = new ArrayList<Player>();
+		ArrayList<Player> ListePlayerATaper = new ArrayList<Player>();
+		
+		Player playerPlusProche=ListePlayers.get(0);
+		int distanceplayerPlusProche=Math.abs(monPlayerPosX-playerPlusProche.getPositionX())+Math.abs(monPlayerPosY-playerPlusProche.getPositionY());
+		
+		for(int i=0;i<ListePlayers.size();i++){
+			if(ListePlayers.get(i).getHasLogo()) {
+				if(ListePlayers.get(i).getNomPlayer() != currentPlayer.getLastHit()) {
+					ListePlayerLogos.add(ListePlayers.get(i));
+				}
+			}
+		}
+		
+		if(ListePlayerLogos.size() > 0) {
+			ListePlayerATaper = ListePlayerLogos;
+		} else {
+			ListePlayerATaper = ListePlayers;
+		}
+		
+		for(int i=0;i<ListePlayerATaper.size();i++){
+			int calcul=Math.abs(monPlayerPosX-ListePlayerATaper.get(i).getPositionX())+Math.abs(monPlayerPosY-ListePlayerATaper.get(i).getPositionY());
+			if(calcul<=distanceplayerPlusProche){
+				playerPlusProche=ListePlayerATaper.get(i);
+				distanceplayerPlusProche=calcul;					
+			}
+		}
+		System.out.println(playerPlusProche.getNomPlayer() + " dist="+distanceplayerPlusProche);
+		
+		if(monPlayerPosY<playerPlusProche.getPositionY()){
+			direction = checkFuturePosition(monPlayerPosX+1,monPlayerPosY, Dir.SUD, 0);
+		}else if(monPlayerPosY>playerPlusProche.getPositionY()){
+			direction = checkFuturePosition(monPlayerPosX+1,monPlayerPosY, Dir.NORD, 0);
+		}else if(monPlayerPosX<playerPlusProche.getPositionX()){
+			direction = checkFuturePosition(monPlayerPosX+1,monPlayerPosY, Dir.EST, 0);
+//			currentPlayer.setNbJump(currentPlayer.getNbJump()+1);
+		}else if(monPlayerPosX>playerPlusProche.getPositionX()){
+			direction = checkFuturePosition(monPlayerPosX+1,monPlayerPosY, Dir.OUEST, 0);
+//			currentPlayer.setNbJump(currentPlayer.getNbJump()+1);
+		}
+				
+		return direction;
+	}
+	
 	public Dir moteurInference(){
 		Dir reponse = null;
-		if(currentPlayer.getHasLogo()){
-			reponse=ramenerLogo();
-		}else if(currentPlayer.getHasLogo()==false){
-			reponse=trouverLogoProche();
+		int i=0;
+		boolean nbLogoLibre=false;
+		while(nbLogoLibre==false && i < ListeLogos.size()){
+			if(ListeLogos.get(i).isEstDispo()){
+				nbLogoLibre =true;
+			}else i++;
 		}
+
+		if(currentPlayer.getHasLogo()){
+			System.out.println(currentPlayer.getNomPlayer() + " ramène le logo");
+			reponse=ramenerLogo();
+		} else if(nbLogoLibre == true){
+			System.out.println(currentPlayer.getNomPlayer() + " cherche le logo");
+			reponse=trouverLogoProche();
+		} else {
+			System.out.println(currentPlayer.getNomPlayer() + " attaque");
+			reponse=attaque();
+		}
+		
 		return reponse;
 	}
 	
