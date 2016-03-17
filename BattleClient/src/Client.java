@@ -272,16 +272,20 @@ public class Client implements Runnable {
 		
 		System.out.println("va vers le logo"+logoPlusProche.getIdLogo()+";"+logoPlusProche.getLogPositionX()+";"+logoPlusProche.getLogPositionY());
 		if(monPlayerPosX<logoPlusProche.getLogPositionX()){
-			reponse=Dir.EST;
+//			reponse=Dir.EST;
 //			currentPlayer.setNbJump(currentPlayer.getNbJump()+1);
+			reponse = checkFuturePosition(monPlayerPosX+1,monPlayerPosY, Dir.EST, 0);
 		}else if(monPlayerPosX>logoPlusProche.getLogPositionX()){
-			reponse=Dir.OUEST;
+//			reponse=Dir.OUEST;
 //			currentPlayer.setNbJump(currentPlayer.getNbJump()+1);
+			reponse = checkFuturePosition(monPlayerPosX-1,monPlayerPosY, Dir.OUEST, 0);
 		}else if(monPlayerPosX==logoPlusProche.getLogPositionX()){
 			if(monPlayerPosY<logoPlusProche.getLogPositionY()){
-				reponse=Dir.SUD;
+//				reponse=Dir.SUD;
+				reponse = checkFuturePosition(monPlayerPosX,monPlayerPosY+1, Dir.SUD, 0);
 			}else if(monPlayerPosY>logoPlusProche.getLogPositionY()){
-				reponse=Dir.NORD;
+//				reponse=Dir.NORD;
+				reponse = checkFuturePosition(monPlayerPosX,monPlayerPosY-1, Dir.NORD, 0);
 			}
 		}
 //		boolean directionKO=true;
@@ -308,6 +312,103 @@ public class Client implements Runnable {
 		return reponse;
 	}
 	
+	private static Dir checkFuturePosition(int x, int y, Dir dir, int tour) {
+		Dir dirDefinitif = null;
+		Dir jumpDir = null;
+		Dir inverseDir = null;
+		Dir inverseDir2 = null;
+		ArrayList<Dir> ListeJump = new ArrayList<Dir>();
+		boolean ennemiFound = false;
+		int i = 0;
+
+		ListeJump.add(Dir.JUMP_EST);
+		ListeJump.add(Dir.JUMP_OUEST);
+		ListeJump.add(Dir.JUMP_NORD);
+		ListeJump.add(Dir.JUMP_SUD);
+		
+		System.out.println("joueur "+currentPlayer.getNomPlayer()+ " checkFuturePosition tour " +tour+ " dir de base " +dir.code);
+		if(dir == Dir.EST) {
+			jumpDir = Dir.JUMP_EST;
+			inverseDir = Dir.OUEST;
+			inverseDir2 = Dir.NORD;
+		}
+		if(dir == Dir.OUEST) {
+			jumpDir = Dir.JUMP_OUEST;
+			inverseDir = Dir.EST;
+			inverseDir2 = Dir.SUD;
+		}
+		if(dir == Dir.NORD) {
+			jumpDir = Dir.JUMP_NORD;
+			inverseDir = Dir.SUD;
+			inverseDir2 = Dir.OUEST;
+		}
+		if(dir == Dir.SUD) {
+			jumpDir = Dir.JUMP_SUD;
+			inverseDir = Dir.NORD;
+			inverseDir2 = Dir.EST;
+		}
+		
+		while(ennemiFound == false && i < ListePlayers.size()) {
+			int posX = ListePlayers.get(i).getPositionX();
+			int posY = ListePlayers.get(i).getPositionY();
+			if(posX == x && posY == y) {
+				ennemiFound = true;
+				System.out.println("joueur "+currentPlayer.getNomPlayer()+ " checkFuturePosition LÀ ! UN ENNEMI !! ");
+				System.out.println("joueur "+currentPlayer.getNomPlayer()+ " checkFuturePosition objectif : " +x+","+y+" ennemi " +ListePlayers.get(i).getPositionX() + "," +ListePlayers.get(i).getPositionY());
+				
+				
+				//On est dans le cas simple : on tente le jumpdir
+				if(jumpDir != null && currentPlayer.getNbJump() < 3) {
+					System.out.println("joueur "+currentPlayer.getNomPlayer()+ " checkFuturePosition JUMPPPP !! ");
+					switch(dir) {
+						case EST:
+							dirDefinitif = checkFuturePosition(x+1,y,jumpDir,0);
+							break;
+						case OUEST:
+							dirDefinitif = checkFuturePosition(x-1,y,jumpDir,0);
+							break;
+						case SUD:
+							dirDefinitif = checkFuturePosition(x,y+1,jumpDir,0);
+							break;
+						case NORD:
+							dirDefinitif = checkFuturePosition(x,y-1,jumpDir,0);
+							break;
+						default:
+							dirDefinitif = null;
+					}
+				}
+				
+				if(dirDefinitif == null) {
+					System.out.println("joueur "+currentPlayer.getNomPlayer()+ " checkFuturePosition NO JUMP => ALTERNATIF tour " +tour+ " / dir " +dir.code);
+					switch(tour) {
+						case 0:
+							dirDefinitif = checkFuturePosition(x+1,y,inverseDir,1);
+							break;
+							
+						case 1:
+							dirDefinitif = checkFuturePosition(x,y+1,inverseDir2,2);
+							break;
+						
+						default:
+							dirDefinitif = dir;
+					}
+				}
+			} else {
+				System.out.println("joueur "+currentPlayer.getNomPlayer()+ " checkFuturePosition GO GO GO!! tour " +tour+ " / dir " +dir.code);
+				dirDefinitif = dir;
+			}
+			
+			i++;
+		}
+		if(ListeJump.contains(dirDefinitif)) {
+			currentPlayer.setNbJump(currentPlayer.getNbJump()+1);
+		}
+
+		System.out.println("joueur "+currentPlayer.getNomPlayer()+ " checkFuturePosition dir " +dirDefinitif.code);
+		
+		return dirDefinitif;
+	}
+
 	public static Dir ramenerLogo(){
 		Dir reponse = null;
 		int monPlayerPosX=currentPlayer.getPositionX();
@@ -316,14 +417,18 @@ public class Client implements Runnable {
 		int monCaddiePosY=currentPlayer.getCaddiePosY();
 		
 		if(monPlayerPosY<monCaddiePosY){
-			reponse=Dir.SUD;
+//			reponse=Dir.SUD;
+			reponse = checkFuturePosition(monPlayerPosX+1,monPlayerPosY, Dir.SUD, 0);
 		}else if(monPlayerPosY>monCaddiePosY){
-			reponse=Dir.NORD;
+//			reponse=Dir.NORD;
+			reponse = checkFuturePosition(monPlayerPosX+1,monPlayerPosY, Dir.NORD, 0);
 		}else if(monPlayerPosY==monCaddiePosY){
 			if(monPlayerPosX>monCaddiePosX){
-				reponse=Dir.OUEST;
+//				reponse=Dir.OUEST;
+				reponse = checkFuturePosition(monPlayerPosX+1,monPlayerPosY, Dir.OUEST, 0);
 			}else if(monPlayerPosX<monCaddiePosX){
-				reponse=Dir.EST;
+//				reponse=Dir.EST;
+				reponse = checkFuturePosition(monPlayerPosX+1,monPlayerPosY, Dir.EST, 0);
 			}
 		}
 		
