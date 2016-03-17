@@ -138,6 +138,29 @@ public class Client implements Runnable {
 		}
 	}
 	
+	public static void setHit() {
+		int posX = currentPlayer.getPositionX();
+		int posY = currentPlayer.getPositionY();
+		String hitID = null; 
+		int nbHit = 0;
+		
+		for(int i=0;i<ListePlayers.size();i++){
+			Player hit = ListePlayers.get(i);
+			for(int j = posX-1; j < posX+1; posX++) {
+				for(int k = posY-1; k < posY+1; posY++) {
+					if(hit.getPositionX() == j && hit.getPositionY() == k) {
+						hitID = hit.getNomPlayer();
+						nbHit++;
+					}
+				}
+			}
+		}
+		
+		if(nbHit == 1) {
+			currentPlayer.setLastHit(hitID);
+		}
+	}
+
 /*********************** modif libre***************************/	
 //Fonction de construction du monde
 	public void initWorld(String[] tab){
@@ -327,32 +350,31 @@ public class Client implements Runnable {
 		ListeJump.add(Dir.JUMP_SUD);
 		
 		System.out.println("joueur "+currentPlayer.getNomPlayer()+ " checkFuturePosition tour " +tour+ " dir de base " +dir.code);
-		if(dir == Dir.EST) {
+		if(dir == Dir.EST || dir == Dir.JUMP_EST) {
 			jumpDir = Dir.JUMP_EST;
-			inverseDir = Dir.OUEST;
-			inverseDir2 = Dir.NORD;
-		}
-		if(dir == Dir.OUEST) {
-			jumpDir = Dir.JUMP_OUEST;
-			inverseDir = Dir.EST;
+			inverseDir = Dir.NORD;
 			inverseDir2 = Dir.SUD;
 		}
-		if(dir == Dir.NORD) {
-			jumpDir = Dir.JUMP_NORD;
+		if(dir == Dir.OUEST || dir == Dir.JUMP_OUEST) {
+			jumpDir = Dir.JUMP_OUEST;
 			inverseDir = Dir.SUD;
-			inverseDir2 = Dir.OUEST;
+			inverseDir2 = Dir.NORD;
 		}
-		if(dir == Dir.SUD) {
+		if(dir == Dir.NORD || dir == Dir.JUMP_NORD) {
+			jumpDir = Dir.JUMP_NORD;
+			inverseDir = (currentPlayer.getHasLogo() ? Dir.OUEST : Dir.EST);
+			inverseDir2 = (!currentPlayer.getHasLogo() ? Dir.EST : Dir.OUEST);
+		}
+		if(dir == Dir.SUD || dir == Dir.JUMP_SUD) {
 			jumpDir = Dir.JUMP_SUD;
-			inverseDir = Dir.NORD;
-			inverseDir2 = Dir.EST;
+			inverseDir = (currentPlayer.getHasLogo() ? Dir.OUEST : Dir.EST);
+			inverseDir2 = (!currentPlayer.getHasLogo() ? Dir.EST : Dir.OUEST);
 		}
 		
 		while(ennemiFound == false && i < ListePlayers.size()) {
 			int posX = ListePlayers.get(i).getPositionX();
 			int posY = ListePlayers.get(i).getPositionY();
 			if(posX == x && posY == y) {
-				ennemiFound = true;
 				System.out.println("joueur "+currentPlayer.getNomPlayer()+ " checkFuturePosition LÀ ! UN ENNEMI !! ");
 				System.out.println("joueur "+currentPlayer.getNomPlayer()+ " checkFuturePosition objectif : " +x+","+y+" ennemi " +ListePlayers.get(i).getPositionX() + "," +ListePlayers.get(i).getPositionY());
 				
@@ -405,6 +427,8 @@ public class Client implements Runnable {
 		}
 
 		System.out.println("joueur "+currentPlayer.getNomPlayer()+ " checkFuturePosition dir " +dirDefinitif.code);
+
+		//setHit();
 		
 		return dirDefinitif;
 	}
@@ -468,7 +492,9 @@ public class Client implements Runnable {
 		
 		for(int i=0;i<ListePlayers.size();i++){
 			if(ListePlayers.get(i).getHasLogo()) {
-				ListePlayerLogos.add(ListePlayers.get(i));
+				if(ListePlayers.get(i).getNomPlayer() != currentPlayer.getLastHit()) {
+					ListePlayerLogos.add(ListePlayers.get(i));
+				}
 			}
 		}
 		
@@ -488,14 +514,14 @@ public class Client implements Runnable {
 		System.out.println(playerPlusProche.getNomPlayer() + " dist="+distanceplayerPlusProche);
 		
 		if(monPlayerPosY<playerPlusProche.getPositionY()){
-			direction=Dir.SUD;
+			direction = checkFuturePosition(monPlayerPosX+1,monPlayerPosY, Dir.SUD, 0);
 		}else if(monPlayerPosY>playerPlusProche.getPositionY()){
-			direction=Dir.NORD;
+			direction = checkFuturePosition(monPlayerPosX+1,monPlayerPosY, Dir.NORD, 0);
 		}else if(monPlayerPosX<playerPlusProche.getPositionX()){
-			direction=Dir.EST;
+			direction = checkFuturePosition(monPlayerPosX+1,monPlayerPosY, Dir.EST, 0);
 //			currentPlayer.setNbJump(currentPlayer.getNbJump()+1);
 		}else if(monPlayerPosX>playerPlusProche.getPositionX()){
-			direction=Dir.OUEST;
+			direction = checkFuturePosition(monPlayerPosX+1,monPlayerPosY, Dir.OUEST, 0);
 //			currentPlayer.setNbJump(currentPlayer.getNbJump()+1);
 		}
 				
