@@ -20,7 +20,7 @@ public class LauncherTest {
 	private static final String ipServer = "52.29.48.22"; // a remplacer par l'adresse fournie dans le mail recu
 
 	private static final long realteamId = 80; // mettre votre teamId envoyé dans le mail
-	private static final String secret ="94HPD5SK37"; // mettre votre secret
+	private static final String secret ="94HPD5SK55"; // mettre votre secret
 	private static final long maxteamId = realteamId + 6; // ne pas toucher
 	private static final int socketNumber = 2080; // mettre le port envoyé dans le mail
 
